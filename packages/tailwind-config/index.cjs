@@ -67,19 +67,25 @@ module.exports = {
           DEFAULT: 'hsl(var(--widget))',
           foreground: 'hsl(var(--widget-foreground))',
         },
+        // Brand palette (formerly 'documenso'). Kept under the same key
+        // so existing Tailwind class usage `bg-documenso-500` etc. still
+        // works without a global rename — the *values* are now Sealflow
+        // purple (Tailwind violet) instead of the original green.
+        // The key will be renamed in a follow-up sweep (sealflow#16) once
+        // we're confident the engine builds and runs end-to-end.
         documenso: {
-          DEFAULT: '#A2E771',
-          50: '#FFFFFF',
-          100: '#FDFFFD',
-          200: '#E7F9DA',
-          300: '#D0F3B7',
-          400: '#B9ED94',
-          500: '#A2E771',
-          600: '#83DF41',
-          700: '#66C622',
-          800: '#4D9619',
-          900: '#356611',
-          950: '#284E0D',
+          DEFAULT: '#7C3AED',
+          50: '#F5F3FF',
+          100: '#EDE9FE',
+          200: '#DDD6FE',
+          300: '#C4B5FD',
+          400: '#A78BFA',
+          500: '#8B5CF6',
+          600: '#7C3AED',
+          700: '#6D28D9',
+          800: '#5B21B6',
+          900: '#4C1D95',
+          950: '#2E1065',
         },
         dawn: {
           DEFAULT: '#aaa89f',
