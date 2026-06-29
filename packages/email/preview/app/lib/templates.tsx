@@ -179,7 +179,7 @@ export const templates: Record<string, TemplateDefinition> = {
     fields: {
       recipientName: recipientNameField,
       documentName: documentNameField,
-      documentOwnerName: { type: 'text', label: 'Document owner', default: 'Timur Ercan' },
+      documentOwnerName: { type: 'text', label: 'Document owner', default: 'The Sealflow Team' },
       reason: {
         type: 'textarea',
         label: 'Rejection reason',
@@ -258,7 +258,7 @@ export const templates: Record<string, TemplateDefinition> = {
     component: OrganisationInviteEmailTemplate,
     fields: {
       senderName: { type: 'text', label: 'Sender name', default: 'Lucas Smith' },
-      organisationName: { type: 'text', label: 'Organisation name', default: 'Documenso' },
+      organisationName: { type: 'text', label: 'Organisation name', default: 'Sealflow' },
     },
   },
   'organisation-join': {
@@ -267,7 +267,7 @@ export const templates: Record<string, TemplateDefinition> = {
     component: OrganisationJoinEmailTemplate,
     fields: {
       memberName: { type: 'text', label: 'Member name', default: 'Lucas Smith' },
-      organisationName: { type: 'text', label: 'Organisation name', default: 'Documenso' },
+      organisationName: { type: 'text', label: 'Organisation name', default: 'Sealflow' },
     },
   },
   'organisation-leave': {
@@ -276,7 +276,7 @@ export const templates: Record<string, TemplateDefinition> = {
     component: OrganisationLeaveEmailTemplate,
     fields: {
       memberName: { type: 'text', label: 'Member name', default: 'Lucas Smith' },
-      organisationName: { type: 'text', label: 'Organisation name', default: 'Documenso' },
+      organisationName: { type: 'text', label: 'Organisation name', default: 'Sealflow' },
     },
   },
   'organisation-delete': {
@@ -284,7 +284,7 @@ export const templates: Record<string, TemplateDefinition> = {
     group: 'Organisations',
     component: OrganisationDeleteEmailTemplate,
     fields: {
-      organisationName: { type: 'text', label: 'Organisation name', default: 'Documenso' },
+      organisationName: { type: 'text', label: 'Organisation name', default: 'Sealflow' },
     },
   },
   'organisation-limit-alert': {
@@ -292,7 +292,7 @@ export const templates: Record<string, TemplateDefinition> = {
     group: 'Organisations',
     component: OrganisationLimitAlertEmailTemplate,
     fields: {
-      organisationName: { type: 'text', label: 'Organisation name', default: 'Documenso' },
+      organisationName: { type: 'text', label: 'Organisation name', default: 'Sealflow' },
     },
   },
   'organisation-account-link-confirmation': {
@@ -300,7 +300,7 @@ export const templates: Record<string, TemplateDefinition> = {
     group: 'Organisations',
     component: OrganisationAccountLinkConfirmationTemplate,
     fields: {
-      organisationName: { type: 'text', label: 'Organisation name', default: 'Documenso' },
+      organisationName: { type: 'text', label: 'Organisation name', default: 'Sealflow' },
     },
   },
 
@@ -310,7 +310,7 @@ export const templates: Record<string, TemplateDefinition> = {
     group: 'Teams',
     component: ConfirmTeamEmailTemplate,
     fields: {
-      teamName: { type: 'text', label: 'Team name', default: 'Documenso' },
+      teamName: { type: 'text', label: 'Team name', default: 'Sealflow' },
     },
   },
   'team-delete': {
@@ -324,7 +324,7 @@ export const templates: Record<string, TemplateDefinition> = {
     group: 'Teams',
     component: TeamEmailRemovedTemplate,
     fields: {
-      teamName: { type: 'text', label: 'Team name', default: 'Documenso' },
+      teamName: { type: 'text', label: 'Team name', default: 'Sealflow' },
       teamEmail: { type: 'text', label: 'Team email', default: 'team@documenso.com' },
     },
   },

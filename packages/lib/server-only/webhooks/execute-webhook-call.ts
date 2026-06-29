@@ -37,7 +37,7 @@ export const executeWebhookCall = async (options: {
       timeoutMs: WEBHOOK_TIMEOUT_MS,
       headers: {
         'Content-Type': 'application/json',
-        'X-Documenso-Secret': secret ?? '',
+        'X-Sealflow-Secret': secret ?? '',
       },
     });
 

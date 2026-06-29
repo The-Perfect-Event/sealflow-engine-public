@@ -20,7 +20,7 @@ type AssertLicensedForOptions = {
 };
 
 /**
- * Assert the configured Documenso licence grants `flag`. Reads the
+ * Assert the configured Sealflow licence grants `flag`. Reads the
  * {@link LicenseClient} cache; never re-pings the licence server.
  *
  * - No `NEXT_PRIVATE_DOCUMENSO_LICENSE_KEY` → throws. No licensing intent.

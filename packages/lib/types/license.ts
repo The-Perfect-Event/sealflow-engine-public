@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /**
- * Note: Keep this in sync with the Documenso License Server schemas.
+ * Note: Keep this in sync with the Sealflow License Server schemas.
  */
 export const ZLicenseClaimSchema = z.object({
   emailDomains: z.boolean().optional(),
@@ -16,14 +16,14 @@ export const ZLicenseClaimSchema = z.object({
 });
 
 /**
- * Note: Keep this in sync with the Documenso License Server schemas.
+ * Note: Keep this in sync with the Sealflow License Server schemas.
  */
 export const ZLicenseRequestSchema = z.object({
   license: z.string().min(1, 'License key is required'),
 });
 
 /**
- * Note: Keep this in sync with the Documenso License Server schemas.
+ * Note: Keep this in sync with the Sealflow License Server schemas.
  */
 export const ZLicenseResponseSchema = z.object({
   success: z.boolean(),

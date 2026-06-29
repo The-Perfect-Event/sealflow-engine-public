@@ -37,7 +37,7 @@ export type CscTransport = {
   /** Pre-configured arctic client bound to the TSP's OAuth registration. */
   oauthClient: OAuth2Client;
   /**
-   * Documenso's callback URL registered with the TSP. Derived from
+   * Sealflow's callback URL registered with the TSP. Derived from
    * `NEXT_PUBLIC_WEBAPP_URL` and the fixed `/api/csc/oauth/callback` mount —
    * mirrors `packages/auth/server/config.ts` for the sign-in OAuth providers.
    * Operators must register this exact URL with the TSP.

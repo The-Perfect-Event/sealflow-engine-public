@@ -8,7 +8,7 @@ import { CSC_OAUTH_FLOW_COOKIE_NAME, cscCookieBaseOptions, getCscCookieSecret } 
 /**
  * `csc_oauth_flow` — single-round-trip carrier across `/api/csc/oauth/authorize`
  * → TSP → `/api/csc/oauth/callback`. Holds the PKCE verifier + state plus the
- * Documenso-side context (`recipientToken`, optional `sessionId`) the
+ * Sealflow-side context (`recipientToken`, optional `sessionId`) the
  * callback needs to resume the right signing flow.
  *
  * JSON-encoded inside a single signed cookie; structurally validated on read

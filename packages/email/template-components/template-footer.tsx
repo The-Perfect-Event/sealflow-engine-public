@@ -34,7 +34,7 @@ export const TemplateFooter = ({ isDocument = true, reportUrl }: TemplateFooterP
           <Trans>
             This document was sent using{' '}
             <Link className="text-primary" href="https://documen.so/mail-footer">
-              Documenso
+              Sealflow
             </Link>
             .
           </Trans>

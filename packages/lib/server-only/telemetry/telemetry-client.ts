@@ -104,7 +104,7 @@ export class TelemetryClient {
     this.nodeId = await this.getOrCreateNodeId();
 
     console.log(
-      '[Telemetry] Telemetry is enabled. Documenso collects anonymous usage data to help improve the product.',
+      '[Telemetry] Telemetry is enabled. Sealflow collects anonymous usage data to help improve the product.',
     );
     console.log(
       '[Telemetry] We collect: app version, installation ID, and node ID. No personal data, document contents, or user information is collected.',

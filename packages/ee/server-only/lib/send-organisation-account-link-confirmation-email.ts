@@ -78,7 +78,7 @@ export const sendOrganisationAccountLinkConfirmationEmail = async ({
   // We only take `emailLanguage` here and intentionally ignore the resolved
   // `emailTransport`/`senderEmail`. Unlike other INTERNAL emails, this is an
   // auth-critical SSO account creation/linking confirmation: it must always be
-  // delivered from trusted Documenso infrastructure (see the `mailer.sendMail`
+  // delivered from trusted Sealflow infrastructure (see the `mailer.sendMail`
   // below). Routing it through the organisation's own (potentially
   // misconfigured) transport could block account linking and lock users out of
   // their own SSO setup.
@@ -108,7 +108,7 @@ export const sendOrganisationAccountLinkConfirmationEmail = async ({
 
   const i18n = await getI18nInstance(emailLanguage);
 
-  // Deliberately uses the global Documenso mailer + internal sender (not the
+  // Deliberately uses the global Sealflow mailer + internal sender (not the
   // organisation's configured email transport) so auth/SSO confirmation mail is
   // always sent from trusted, controlled infrastructure. See the note on the
   // getEmailContext call above.
