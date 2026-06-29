@@ -1,0 +1,116 @@
+name: Build and push engine image
+
+# Tag-driven CI for sealflow-engine (sealflow#13 Phase 1c).
+#
+# Builds the source-built engine image and pushes to GHCR.
+# Does NOT run on every push to main — only on release tags. Ad-hoc builds
+# go through workflow_dispatch.
+#
+# Image: ghcr.io/the-perfect-event/sealflow-engine
+# Tags:  the release tag itself (e.g. v1.0.0), plus 'latest' for non-prerelease tags
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to publish (e.g. v1.0.0-test or dev-2026-06-29)'
+        required: true
+        default: 'manual'
+      push:
+        description: 'Push to GHCR (set false for build-only sanity check)'
+        type: boolean
+        required: true
+        default: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: the-perfect-event/sealflow-engine
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout sealflow-engine
+        uses: actions/checkout@v4
+
+      - name: Read FORK_FROM for build metadata
+        id: fork
+        run: |
+          UPSTREAM_SHA=$(grep '^upstream_sha:' FORK_FROM | awk '{print $2}')
+          UPSTREAM_TAG=$(grep '^upstream_tag:' FORK_FROM | awk '{print $2}')
+          echo "upstream_sha=${UPSTREAM_SHA}" >> "$GITHUB_OUTPUT"
+          echo "upstream_tag=${UPSTREAM_TAG}" >> "$GITHUB_OUTPUT"
+          echo "Build is based on documenso/documenso@${UPSTREAM_SHA} (${UPSTREAM_TAG})" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Resolve image tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # Tag push — use the git tag verbatim
+            TAG="${GITHUB_REF_NAME}"
+          else
+            # Manual workflow_dispatch
+            TAG="${{ github.event.inputs.image_tag }}"
+          fi
+          echo "image_tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Building image tag: ${TAG}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Compute additional tags
+        id: extra
+        run: |
+          # 'latest' only on non-prerelease semver tags pushed to main
+          EXTRA=""
+          if [[ "${{ github.event_name }}" = "push" && "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            EXTRA="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+          fi
+          echo "extra_tags=${EXTRA}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: ${{ github.event_name == 'push' || github.event.inputs.push == 'true' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64
+          push: ${{ github.event_name == 'push' || github.event.inputs.push == 'true' }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.image_tag }}
+            ${{ steps.extra.outputs.extra_tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.title=sealflow-engine
+            org.opencontainers.image.description=Sealflow signing engine (fork of Documenso v2.14.0)
+            org.opencontainers.image.source=https://github.com/The-Perfect-Event/sealflow-engine
+            org.opencontainers.image.licenses=AGPL-3.0-only
+            org.opencontainers.image.revision=${{ github.sha }}
+            sealflow.upstream_sha=${{ steps.fork.outputs.upstream_sha }}
+            sealflow.upstream_tag=${{ steps.fork.outputs.upstream_tag }}
+
+      - name: Summary
+        run: |
+          echo "## Image built" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Registry: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Tag: \`${{ steps.tag.outputs.image_tag }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Pushed: \`${{ github.event_name == 'push' || github.event.inputs.push == 'true' }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Upstream: \`documenso/documenso@${{ steps.fork.outputs.upstream_sha }}\`" >> "$GITHUB_STEP_SUMMARY"
