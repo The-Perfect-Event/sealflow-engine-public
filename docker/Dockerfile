@@ -43,6 +43,12 @@ ENV HUSKY 0
 ENV DOCKER_OUTPUT 1
 ENV NEXT_TELEMETRY_DISABLED 1
 
+# Sealflow fork: bump V8 heap so the Remix bundle doesn't OOM at ~2GB
+# (default Node max-old-space-size). Observed during the Phase 1e parity
+# build of sealflow-engine. Hardware-side memory is fine (Docker Desktop
+# 7.6GiB, GHA runners 7+GiB) — the constraint is Node's default heap.
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
 # Encryption keys
 ARG NEXT_PRIVATE_ENCRYPTION_KEY="CAFEBABE"
 ENV NEXT_PRIVATE_ENCRYPTION_KEY="$NEXT_PRIVATE_ENCRYPTION_KEY"
