@@ -8,15 +8,14 @@ name: AGPL disclosure mirror
 # interacting with the running service over the network can obtain the
 # corresponding source. See AGPL_DISCLOSURE.md at repo root for context.
 #
-# REQUIRED SECRET (one-time setup):
-#   MIRROR_PUSH_TOKEN — a fine-grained PAT or classic PAT with:
-#     - repo: contents: write  (on sealflow-engine-public only)
-#     - actions: read           (optional, for status reporting)
-#   Create at https://github.com/settings/tokens?type=beta then add to
-#   this repo's secrets as MIRROR_PUSH_TOKEN.
+# AUTH: deploy-key flow (no PAT, no user identity).
+#   - Public key registered on sealflow-engine-public as a write-enabled deploy key
+#   - Private key stored on this repo as the MIRROR_SSH_KEY secret
+#   - Workflow loads it into ssh-agent, then pushes via git@github.com:...
 #
-# Alternative: a deploy key on the public mirror; replace the basic-auth
-# push URL below with `git@github.com:...` and an ssh-agent action.
+# Rotation: regenerate keypair locally, update both the deploy key and the
+# secret in one go. The script that did the initial provisioning is at
+# the bottom of sealflow#13's Phase 1f close-out.
 
 on:
   push:
@@ -34,7 +33,8 @@ permissions:
   contents: read
 
 env:
-  MIRROR_REPO: The-Perfect-Event/sealflow-engine-public
+  MIRROR_REPO_SSH: git@github.com:The-Perfect-Event/sealflow-engine-public.git
+  MIRROR_REPO_DISPLAY: The-Perfect-Event/sealflow-engine-public
 
 jobs:
   mirror:
@@ -48,20 +48,22 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Verify MIRROR_PUSH_TOKEN is configured
+      - name: Verify MIRROR_SSH_KEY is configured
         run: |
-          if [ -z "${{ secrets.MIRROR_PUSH_TOKEN }}" ]; then
-            echo "::error::MIRROR_PUSH_TOKEN secret is not configured."
-            echo "::error::See workflow file header for setup instructions."
+          if [ -z "${{ secrets.MIRROR_SSH_KEY }}" ]; then
+            echo "::error::MIRROR_SSH_KEY secret is not configured."
             exit 1
           fi
 
-      - name: Add public mirror as a remote
-        env:
-          TOKEN: ${{ secrets.MIRROR_PUSH_TOKEN }}
+      - name: Load deploy key into ssh-agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.MIRROR_SSH_KEY }}
+
+      - name: Add public mirror as a git remote
         run: |
-          git remote add public "https://x-access-token:${TOKEN}@github.com/${{ env.MIRROR_REPO }}.git"
-          git remote -v | sed 's|x-access-token:[^@]*@|x-access-token:***@|g'
+          git remote add public "${{ env.MIRROR_REPO_SSH }}"
+          git remote -v
 
       - name: Push main + tag to mirror
         run: |
@@ -71,8 +73,6 @@ jobs:
             FORCE_FLAG="--force-with-lease"
             echo "::warning::Force-push enabled"
           fi
-          # On a tag push: push main + the tag itself
-          # On manual dispatch: push main only (no tag to forward)
           if [ "${{ github.event_name }}" = "push" ]; then
             git push $FORCE_FLAG public main
             git push $FORCE_FLAG public "${GITHUB_REF_NAME}"
@@ -85,7 +85,7 @@ jobs:
           {
             echo "## Disclosure mirror updated"
             echo ""
-            echo "- Mirror: \`${{ env.MIRROR_REPO }}\`"
+            echo "- Mirror: \`${{ env.MIRROR_REPO_DISPLAY }}\`"
             echo "- Pushed: \`main\`$([ "${{ github.event_name }}" = "push" ] && echo " + tag \`${GITHUB_REF_NAME}\`")"
             echo ""
             echo "AGPL §13 disclosure surface refreshed."
