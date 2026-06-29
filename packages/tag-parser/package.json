@@ -1,0 +1,21 @@
+{
+  "name": "@documenso/tag-parser",
+  "version": "0.1.0",
+  "description": "Adobe Sign-style tagged PDF parser. Reads {{Sig1_es_:signer1}} style tags from a PDF, returns Documenso recipient/field create payloads + a cleaned PDF with tag text overlaid.",
+  "license": "MIT",
+  "private": true,
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "files": [
+    "index.ts",
+    "src/",
+    "README.md"
+  ],
+  "scripts": {
+    "clean": "rimraf node_modules"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "5.4.296"
+  }
+}
