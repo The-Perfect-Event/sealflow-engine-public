@@ -1,6 +1,6 @@
 # sealflow-engine
 
-The signing engine that powers Sealflow — The Perfect Event's in-house e-signature platform.
+The signing engine that powers Sealflow.
 
 This repository is a **hard fork of [Documenso](https://github.com/documenso/documenso) v2.14.0** ([upstream SHA `037170f`](https://github.com/documenso/documenso/commit/037170f6253d8b2bdeaf2eb0a08d04f152a41a58)). See [`FORK_FROM`](FORK_FROM) for the machine-readable fork metadata. See the original upstream README at [`UPSTREAM_README.md`](UPSTREAM_README.md) for credits, history, and the original product story.
 

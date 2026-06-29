@@ -24,8 +24,7 @@ The mirror is a **one-way push from `main`** at each release tag of the private 
 It does **not** contain:
 
 - Operational secrets or configuration (none of these are committed to either repo)
-- Internal R&D notes / decision documents (those live in the `sealflow` umbrella repo)
-- Issue history (issues are tracked at https://github.com/The-Perfect-Event/sealflow/issues — the mirror has issues disabled to avoid confusing AGPL-only readers about where to report things)
+- Internal R&D notes / decision documents (those live in private repos)
 
 ## Workflow at release time
 
@@ -53,9 +52,9 @@ Per AGPL v3 §5(c), copyright notices in the original Documenso source files are
 
 ## Questions / non-compliance reports
 
-If you believe this fork is not compliant with AGPL §13:
+If you believe this fork is not compliant with AGPL §13, please open an
+issue on the public mirror:
 
-- File at https://github.com/The-Perfect-Event/sealflow/issues
-- Or email hasham@theperfectevent.com
+https://github.com/The-Perfect-Event/sealflow-engine-public/issues
 
 Compliance issues will be prioritized.
