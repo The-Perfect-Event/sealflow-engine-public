@@ -453,6 +453,11 @@ model Envelope {
   internalVersion         Int
   useLegacyFieldInsertion Boolean @default(false)
 
+  /// True when the envelope's items were created from Adobe Sign-style
+  /// tagged PDFs (e.g. `{{Sig1_es_:signer1}}`) via the tag-parser intercept
+  /// in createEnvelope. Audit signal only — does not change runtime behavior.
+  taggedSource Boolean @default(false)
+
   envelopeItems EnvelopeItem[]
   recipients    Recipient[]
   fields        Field[]

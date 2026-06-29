@@ -37,9 +37,9 @@ import { extractDerivedDocumentMeta } from '../../utils/document';
 import { createDocumentAuthOptions, createRecipientAuthOptions } from '../../utils/document-auth';
 import { buildTeamWhereQuery } from '../../utils/teams';
 import { incrementDocumentId, incrementTemplateId } from '../envelope/increment-id';
+import { assertOrganisationRatesAndLimits } from '../rate-limit/assert-organisation-rates-and-limits';
 import { assertCompatibleRecipientRole } from '../signature-level/assert-compatible-recipient-role';
 import { resolveSignatureLevel } from '../signature-level/resolve-signature-level';
-import { assertOrganisationRatesAndLimits } from '../rate-limit/assert-organisation-rates-and-limits';
 import { getTeamSettings } from '../team/get-team-settings';
 import { assertUserNotDisabledById } from '../user/assert-user-not-disabled';
 import { triggerWebhook } from '../webhooks/trigger/trigger-webhook';
@@ -93,6 +93,13 @@ export type CreateEnvelopeOptions = {
     folderId?: string;
     delegatedDocumentOwner?: string;
     signatureLevel?: TSignatureLevel;
+    /**
+     * Audit signal: true when any envelope item's PDF was processed through
+     * the Adobe Sign tag-parser intercept (sealflow#13 Phase 2c). No runtime
+     * effect — surfaces in admin tooling and analytics for tracking adoption
+     * of the tag-based intake flow.
+     */
+    taggedSource?: boolean;
   };
   attachments?: Array<{
     label: string;
@@ -142,6 +149,7 @@ export const createEnvelope = async ({
     visibility: visibilityOverride,
     delegatedDocumentOwner,
     signatureLevel: requestedSignatureLevel,
+    taggedSource = false,
   } = data;
 
   const signatureLevel = resolveSignatureLevel({
@@ -363,6 +371,7 @@ export const createEnvelope = async ({
         signatureLevel,
         qrToken: prefixedId('qr'),
         externalId,
+        taggedSource,
         envelopeItems: {
           createMany: {
             data: envelopeItems.map((item, i) => ({

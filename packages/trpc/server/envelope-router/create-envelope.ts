@@ -146,6 +146,7 @@ export const createEnvelopeRouteCaller = async ({
         title: file.name,
         documentDataId: documentData.id,
         placeholders,
+        hasAdobeTags: adobePlaceholders.length > 0,
       };
     }),
   );
@@ -185,6 +186,8 @@ export const createEnvelopeRouteCaller = async ({
     }),
   }));
 
+  const taggedSource = envelopeItems.some((item) => item.hasAdobeTags);
+
   const envelope = await createEnvelope({
     userId,
     teamId,
@@ -197,6 +200,7 @@ export const createEnvelopeRouteCaller = async ({
       visibility,
       globalAccessAuth,
       globalActionAuth,
+      taggedSource,
       recipients: recipientsToCreate,
       folderId,
       envelopeItems,
