@@ -3,6 +3,7 @@ import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import { convertToPdf } from '@documenso/lib/server-only/document-conversion';
 import { createEnvelope } from '@documenso/lib/server-only/envelope/create-envelope';
 import { extractPdfPlaceholders } from '@documenso/lib/server-only/pdf/auto-place-fields';
+import { extractAdobeTagPlaceholders } from '@documenso/lib/server-only/pdf/extract-adobe-tag-placeholders';
 import { normalizePdf } from '@documenso/lib/server-only/pdf/normalize-pdf';
 import type { ApiRequestMetadata } from '@documenso/lib/universal/extract-request-metadata';
 import { putPdfFileServerSide } from '@documenso/lib/universal/upload/put-file.server';
@@ -124,7 +125,16 @@ export const createEnvelopeRouteCaller = async ({
       });
 
       // Todo: Embeds - Might need to add this for client-side embeds in the future.
-      const { cleanedPdf, placeholders } = await extractPdfPlaceholders(normalized);
+      const { cleanedPdf: nativeCleaned, placeholders: nativePlaceholders } = await extractPdfPlaceholders(normalized);
+
+      // Sealflow fork: second pass for Adobe Sign-style tags (e.g. {{Sig1_es_:signer1}}).
+      // Runs on the native-cleaned PDF so the two passes don't interfere. Adobe-style
+      // recipient labels ('signer1', etc.) are translated to 'r1' inside the adapter so
+      // the downstream auto-create-placeholder-recipients path treats them identically
+      // to the native syntax.
+      const { cleanedPdf, placeholders: adobePlaceholders } = await extractAdobeTagPlaceholders(nativeCleaned);
+
+      const placeholders = [...nativePlaceholders, ...adobePlaceholders];
 
       const { documentData } = await putPdfFileServerSide({
         name: file.name,
