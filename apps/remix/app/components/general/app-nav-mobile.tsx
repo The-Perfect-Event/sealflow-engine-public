@@ -115,9 +115,17 @@ export const AppNavMobile = ({ isMenuOpen, onMenuOpenChange }: AppNavMobileProps
           </div>
 
           <p className="text-muted-foreground text-sm">
-            © {new Date().getFullYear()} Documenso, Inc.
+            Sealflow
             <br />
-            <Trans>All rights reserved.</Trans>
+            <a
+              className="text-primary underline"
+              href="https://github.com/The-Perfect-Event/sealflow-engine-public"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Trans>Source code</Trans>
+            </a>
+            <br />© {new Date().getFullYear()} Documenso, Inc.
           </p>
         </div>
       </SheetContent>

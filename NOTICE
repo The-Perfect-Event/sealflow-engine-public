@@ -1,0 +1,15 @@
+NOTICE
+======
+
+This work is derived from Documenso (https://github.com/documenso/documenso),
+originally Copyright (c) Documenso, Inc., licensed under AGPL-3.0-only.
+
+Modifications by The Perfect Event begin 2026-06-29. The complete per-file
+modification log is the git history of this repository, mirrored at
+https://github.com/The-Perfect-Event/sealflow-engine-public for the
+AGPL section 13 source-disclosure obligation.
+
+License: AGPL-3.0-only (carried forward from upstream — see LICENSE).
+Upstream provenance:  see FORK_FROM.
+Frozen code paths:    see FROZEN.md.
+Disclosure mechanism: see AGPL_DISCLOSURE.md.

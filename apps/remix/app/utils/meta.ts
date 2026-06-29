@@ -20,7 +20,7 @@ export const appMetaTags = (title?: MessageDescriptor) => {
     },
     {
       name: 'author',
-      content: 'Documenso, Inc.',
+      content: 'Sealflow',
     },
     {
       name: 'robots',
