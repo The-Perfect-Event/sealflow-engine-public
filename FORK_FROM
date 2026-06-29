@@ -1,0 +1,15 @@
+upstream_repo: documenso/documenso
+upstream_tag: v2.14.0
+upstream_sha: 037170f6253d8b2bdeaf2eb0a08d04f152a41a58
+upstream_release_url: https://github.com/documenso/documenso/releases/tag/v2.14.0
+upstream_release_date: 2026-06-28T02:39:31Z
+upstream_license_at_fork: AGPL-3.0-only
+fork_date: 2026-06-29
+fork_repo: The-Perfect-Event/sealflow-engine
+fork_initial_commit: 4257335568aaff1c4140fefcb0e1294589fc0a09
+disclosure_mirror: https://github.com/The-Perfect-Event/sealflow-engine-public
+ticket: https://github.com/The-Perfect-Event/sealflow/issues/13
+
+# This file is machine-readable and the canonical record of where this
+# codebase came from. Do not edit lightly. If we ever re-baseline against
+# a newer upstream tag, append a new block below rather than overwriting.
