@@ -1,0 +1,92 @@
+name: AGPL disclosure mirror
+
+# Tag-driven push to the public AGPL §13 disclosure mirror
+# (sealflow#13 Phase 1f).
+#
+# On every release tag, the tag tree of this private repo is pushed to
+# https://github.com/The-Perfect-Event/sealflow-engine-public so anyone
+# interacting with the running service over the network can obtain the
+# corresponding source. See AGPL_DISCLOSURE.md at repo root for context.
+#
+# REQUIRED SECRET (one-time setup):
+#   MIRROR_PUSH_TOKEN — a fine-grained PAT or classic PAT with:
+#     - repo: contents: write  (on sealflow-engine-public only)
+#     - actions: read           (optional, for status reporting)
+#   Create at https://github.com/settings/tokens?type=beta then add to
+#   this repo's secrets as MIRROR_PUSH_TOKEN.
+#
+# Alternative: a deploy key on the public mirror; replace the basic-auth
+# push URL below with `git@github.com:...` and an ssh-agent action.
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force-push (use with care; mirror should never diverge)'
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  MIRROR_REPO: The-Perfect-Event/sealflow-engine-public
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout sealflow-engine (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Verify MIRROR_PUSH_TOKEN is configured
+        run: |
+          if [ -z "${{ secrets.MIRROR_PUSH_TOKEN }}" ]; then
+            echo "::error::MIRROR_PUSH_TOKEN secret is not configured."
+            echo "::error::See workflow file header for setup instructions."
+            exit 1
+          fi
+
+      - name: Add public mirror as a remote
+        env:
+          TOKEN: ${{ secrets.MIRROR_PUSH_TOKEN }}
+        run: |
+          git remote add public "https://x-access-token:${TOKEN}@github.com/${{ env.MIRROR_REPO }}.git"
+          git remote -v | sed 's|x-access-token:[^@]*@|x-access-token:***@|g'
+
+      - name: Push main + tag to mirror
+        run: |
+          set -eu
+          FORCE_FLAG=""
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then
+            FORCE_FLAG="--force-with-lease"
+            echo "::warning::Force-push enabled"
+          fi
+          # On a tag push: push main + the tag itself
+          # On manual dispatch: push main only (no tag to forward)
+          if [ "${{ github.event_name }}" = "push" ]; then
+            git push $FORCE_FLAG public main
+            git push $FORCE_FLAG public "${GITHUB_REF_NAME}"
+          else
+            git push $FORCE_FLAG public main
+          fi
+
+      - name: Summary
+        run: |
+          {
+            echo "## Disclosure mirror updated"
+            echo ""
+            echo "- Mirror: \`${{ env.MIRROR_REPO }}\`"
+            echo "- Pushed: \`main\`$([ "${{ github.event_name }}" = "push" ] && echo " + tag \`${GITHUB_REF_NAME}\`")"
+            echo ""
+            echo "AGPL §13 disclosure surface refreshed."
+          } >> "$GITHUB_STEP_SUMMARY"

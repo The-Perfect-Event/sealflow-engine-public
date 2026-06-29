@@ -7,6 +7,7 @@ Upstream Documenso workflows were removed at fork time (sealflow#13 Phase 1a) �
 | File | Trigger | What it does |
 |---|---|---|
 | [`build-and-push.yml`](build-and-push.yml) | `push` of `v*.*.*` tag, or manual `workflow_dispatch` | Builds the engine Docker image from `docker/Dockerfile` and pushes to `ghcr.io/the-perfect-event/sealflow-engine`. Tag-driven by design — no per-commit builds to conserve Actions minutes. |
+| [`disclosure-mirror.yml`](disclosure-mirror.yml) | `push` of `v*.*.*` tag, or manual `workflow_dispatch` | Pushes the tag tree to `The-Perfect-Event/sealflow-engine-public` for AGPL §13 source disclosure. Requires `MIRROR_PUSH_TOKEN` secret (PAT with `contents: write` on the mirror repo). See workflow file header for setup. |
 
 ## How to publish a release image
 
@@ -30,5 +31,4 @@ Or `push=false` for a build-only sanity check (no GHCR push).
 
 ## Coming later
 
-- Phase 1f: `disclosure-mirror.yml` — push tag tree to `sealflow-engine-public` for AGPL §13 disclosure.
 - Possibly a CodeQL re-introduction once we're stable on our fork — currently deferred.
