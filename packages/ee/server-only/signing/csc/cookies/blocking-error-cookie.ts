@@ -1,120 +1,28 @@
-import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
-import type { Context } from 'hono';
-import { deleteCookie, getSignedCookie, setSignedCookie } from 'hono/cookie';
-import { parseSigned, serialize } from 'hono/utils/cookie';
-import { z } from 'zod';
-
-import { CSC_BLOCKING_ERROR_COOKIE_NAME, cscCookieBaseOptions, getCscCookieSecret } from './shared';
-
 /**
- * `csc_blocking_error` — one-shot surface for service-scope OAuth callback
- * failures the recipient can't self-resolve (empty credential list, invalid
- * cert, refused algorithm, etc.). The `/sign/{token}` loader reads + clears
- * it on next visit so no error state rides on URL query params.
+ * AGPL no-op stub (sealflow#18) replacing the proprietary Documenso EE CSC
+ * blocking-error cookie helpers.
+ *
+ * CSC/QES signing is not enabled in this fork (`IS_INSTANCE_CSC_MODE()` is
+ * always false), so no blocking-error cookie is ever set. The recipient signing
+ * loader still imports these, so the reader returns `null` (no error present) —
+ * exactly the value the loader treats as "no CSC blocking state".
  */
 
-const CSC_BLOCKING_ERROR_MAX_AGE_SECONDS = 60 * 10; // 10 minutes — matches the other short-lived CSC cookies.
-
-export const ZCscBlockingErrorPayloadSchema = z.object({
+export type TCscBlockingErrorPayload = {
   /** `AppErrorCode` value, e.g. `'CSC_CREDENTIAL_LIST_EMPTY'`. */
-  code: z.string().min(1),
-  /** Recipient token from `/sign/{token}`; loader scopes the error to its recipient. */
-  recipientToken: z.string().min(1),
-});
-
-export type TCscBlockingErrorPayload = z.infer<typeof ZCscBlockingErrorPayloadSchema>;
-
-type SetCscBlockingErrorCookieOptions = {
-  c: Context;
-  payload: TCscBlockingErrorPayload;
+  code: string;
+  /** Recipient token from `/sign/{token}`; the loader scopes the error to its recipient. */
+  recipientToken: string;
 };
 
-export const setCscBlockingErrorCookie = async (options: SetCscBlockingErrorCookieOptions): Promise<void> => {
-  const { c, payload } = options;
-
-  await setSignedCookie(c, CSC_BLOCKING_ERROR_COOKIE_NAME, JSON.stringify(payload), getCscCookieSecret(), {
-    ...cscCookieBaseOptions,
-    maxAge: CSC_BLOCKING_ERROR_MAX_AGE_SECONDS,
-  });
+export const readCscBlockingErrorFromRequest = async (_request: Request): Promise<TCscBlockingErrorPayload | null> => {
+  return null;
 };
 
 /**
- * Read + validate the blocking-error cookie. Returns `null` when absent or
- * signature-invalid; throws `INVALID_REQUEST` when signed-but-malformed
- * (tamper-shaped, mirroring `oauth-flow-cookie.ts`).
- */
-export const getCscBlockingErrorCookie = async (c: Context): Promise<TCscBlockingErrorPayload | null> => {
-  const raw = await getSignedCookie(c, getCscCookieSecret(), CSC_BLOCKING_ERROR_COOKIE_NAME);
-
-  if (!raw) {
-    return null;
-  }
-
-  let parsedJson: unknown;
-
-  try {
-    parsedJson = JSON.parse(raw);
-  } catch {
-    throw new AppError(AppErrorCode.INVALID_REQUEST, {
-      message: 'CSC blocking error cookie payload is not valid JSON.',
-    });
-  }
-
-  const result = ZCscBlockingErrorPayloadSchema.safeParse(parsedJson);
-
-  if (!result.success) {
-    throw new AppError(AppErrorCode.INVALID_REQUEST, {
-      message: 'CSC blocking error cookie payload failed schema validation.',
-    });
-  }
-
-  return result.data;
-};
-
-export const clearCscBlockingErrorCookie = (c: Context): void => {
-  deleteCookie(c, CSC_BLOCKING_ERROR_COOKIE_NAME, cscCookieBaseOptions);
-};
-
-/**
- * Remix-compatible reader: parses + HMAC-verifies the blocking-error cookie
- * from a raw `Cookie` header on a standard `Request`. Returns `null` when
- * absent, signature-invalid, or payload-malformed (no throw — the loader
- * only uses the cookie advisorily, so a bad cookie shouldn't break the page).
- */
-export const readCscBlockingErrorFromRequest = async (request: Request): Promise<TCscBlockingErrorPayload | null> => {
-  const cookieHeader = request.headers.get('cookie');
-
-  if (!cookieHeader) {
-    return null;
-  }
-
-  const parsed = await parseSigned(cookieHeader, getCscCookieSecret(), CSC_BLOCKING_ERROR_COOKIE_NAME);
-
-  const value = parsed[CSC_BLOCKING_ERROR_COOKIE_NAME];
-
-  if (typeof value !== 'string') {
-    return null;
-  }
-
-  try {
-    const json = JSON.parse(value);
-
-    const result = ZCscBlockingErrorPayloadSchema.safeParse(json);
-
-    return result.success ? result.data : null;
-  } catch {
-    return null;
-  }
-};
-
-/**
- * Serialised `Set-Cookie` header value that expires the cookie immediately.
- * Use in a Remix loader's response headers to clear the cookie after the
- * loader reads it once.
+ * Returns a `Set-Cookie` header value that expires the (never-set) cookie.
+ * Harmless to emit; kept so the loader's clear-on-read path still type-checks.
  */
 export const buildClearCscBlockingErrorCookieHeader = (): string => {
-  return serialize(CSC_BLOCKING_ERROR_COOKIE_NAME, '', {
-    ...cscCookieBaseOptions,
-    maxAge: 0,
-  });
+  return 'csc_blocking_error=; Path=/; Max-Age=0; SameSite=Lax';
 };
