@@ -113,7 +113,7 @@ export default function EmbeddingAuthoringTemplateEditPage() {
       distributionMethod: template.templateMeta?.distributionMethod ?? DocumentDistributionMethod.EMAIL,
       emailSettings: template.templateMeta?.emailSettings ?? ZDocumentEmailSettingsSchema.parse({}),
       timezone: template.templateMeta?.timezone ?? DEFAULT_DOCUMENT_TIME_ZONE,
-      signingOrder: template.templateMeta?.signingOrder ?? DocumentSigningOrder.PARALLEL,
+      signingOrder: template.templateMeta?.signingOrder ?? DocumentSigningOrder.SEQUENTIAL,
       allowDictateNextSigner: template.templateMeta?.allowDictateNextSigner ?? false,
       language: isValidLanguageCode(template.templateMeta?.language) ? template.templateMeta.language : undefined,
       signatureTypes: signatureTypes,

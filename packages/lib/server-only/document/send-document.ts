@@ -126,7 +126,9 @@ export const sendDocument = async ({ id, userId, teamId, sendEmail, requestMetad
 
   const legacyDocumentId = mapSecondaryIdToDocumentId(envelope.secondaryId);
 
-  let signingOrder = envelope.documentMeta?.signingOrder || DocumentSigningOrder.PARALLEL;
+  // Sealflow fork: default to SEQUENTIAL when meta has no signingOrder set.
+  // Upstream Documenso used PARALLEL as the bare fallback here.
+  let signingOrder = envelope.documentMeta?.signingOrder || DocumentSigningOrder.SEQUENTIAL;
 
   if (isTspEnvelope(envelope) && signingOrder === DocumentSigningOrder.PARALLEL && envelope.documentMeta) {
     console.warn(
