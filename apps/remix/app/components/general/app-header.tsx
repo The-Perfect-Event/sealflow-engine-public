@@ -61,7 +61,13 @@ export const Header = ({ className, ...props }: HeaderProps) => {
           to={getRootHref(params)}
           className="hidden rounded-md ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:inline"
         >
-          <BrandingLogo className="h-6 w-auto" />
+          {/* Sealflow fork: h-10 (was h-6 upstream) so the post-1d wordmark
+              fills the navbar, plus a brightness/saturate filter so the
+              dark-purple PNG reads cleanly on the dark navbar gradient.
+              Tracked as: durable in-source replacement for the hot-patches
+              applied at runtime today; superseded by sealflow#19 once a
+              dark-mode logo variant exists. */}
+          <BrandingLogo className="h-10 w-auto" style={{ filter: 'brightness(1.6) saturate(1.3)' }} />
         </Link>
 
         <AppNavDesktop setIsCommandMenuOpen={setIsCommandMenuOpen} />
