@@ -42,6 +42,20 @@ export const ZSignUpSchema = z.object({
 
 export type TSignUpSchema = z.infer<typeof ZSignUpSchema>;
 
+/**
+ * Invite-only account creation (sealflow#14). The one-time `token` replaces the
+ * public-signup surface: the address is taken from the invite, not user input,
+ * and no captcha is required (the token is the gate).
+ */
+export const ZAcceptOrganisationInviteSchema = z.object({
+  token: z.string().min(1),
+  name: ZNameSchema,
+  password: ZPasswordSchema,
+  signature: z.string().nullish(),
+});
+
+export type TAcceptOrganisationInviteSchema = z.infer<typeof ZAcceptOrganisationInviteSchema>;
+
 export const ZForgotPasswordSchema = z.object({
   email: zEmail().min(1),
 });

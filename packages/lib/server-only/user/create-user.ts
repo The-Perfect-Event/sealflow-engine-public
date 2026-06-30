@@ -11,9 +11,30 @@ export interface CreateUserOptions {
   email: string;
   password: string;
   signature?: string | null;
+  /**
+   * When true, the new user does not get a personal organisation created for
+   * them. Used by the invite-acceptance flow (sealflow#14), where the user is
+   * provisioned directly into the inviting organisation rather than a personal
+   * space.
+   */
+  skipPersonalOrganisation?: boolean;
+  /**
+   * When true, the account is created already email-verified. Used by the
+   * invite-acceptance flow (sealflow#14): possession of the one-time invite
+   * token emailed to the address already proves ownership, so no separate
+   * email-verification round-trip is required.
+   */
+  emailVerified?: boolean;
 }
 
-export const createUser = async ({ name, email, password, signature }: CreateUserOptions) => {
+export const createUser = async ({
+  name,
+  email,
+  password,
+  signature,
+  skipPersonalOrganisation = false,
+  emailVerified = false,
+}: CreateUserOptions) => {
   const hashedPassword = await hash(password, SALT_ROUNDS);
 
   const userExists = await prisma.user.findFirst({
@@ -32,6 +53,7 @@ export const createUser = async ({ name, email, password, signature }: CreateUse
       email: email.toLowerCase(),
       password: hashedPassword, // Todo: (RR7) Drop password.
       signature,
+      emailVerified: emailVerified ? new Date() : null,
     },
   });
 
@@ -62,7 +84,7 @@ export const createUser = async ({ name, email, password, signature }: CreateUse
   // });
 
   // Not used at the moment, uncomment if required.
-  await onCreateUserHook(user).catch((err) => {
+  await onCreateUserHook(user, { skipPersonalOrganisation }).catch((err) => {
     // Todo: (RR7) Add logging.
     console.error(err);
   });

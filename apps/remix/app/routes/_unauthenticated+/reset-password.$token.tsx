@@ -1,7 +1,7 @@
 import { getResetTokenValidity } from '@documenso/lib/server-only/user/get-reset-token-validity';
 import { msg } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
-import { Link, redirect } from 'react-router';
+import { redirect } from 'react-router';
 
 import { ResetPasswordForm } from '~/components/forms/reset-password';
 import { appMetaTags } from '~/utils/meta';
@@ -41,15 +41,6 @@ export default function ResetPasswordPage({ loaderData }: Route.ComponentProps) 
         </p>
 
         <ResetPasswordForm token={token} className="mt-4" />
-
-        <p className="mt-6 text-center text-muted-foreground text-sm">
-          <Trans>
-            Don't have an account?{' '}
-            <Link to="/signup" className="text-primary duration-200 hover:opacity-70">
-              Sign up
-            </Link>
-          </Trans>
-        </p>
       </div>
     </div>
   );

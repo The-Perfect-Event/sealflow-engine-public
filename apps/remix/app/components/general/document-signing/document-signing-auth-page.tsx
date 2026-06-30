@@ -24,7 +24,10 @@ export const DocumentSigningAuthPageView = ({ email, emailHasAccount }: Document
       let redirectPath = '/signin';
 
       if (email) {
-        redirectPath = emailHasAccount ? `/signin#email=${email}` : `/signup#email=${email}`;
+        // sealflow#14: invite-only — there is no public signup. Recipients
+        // without an account are directed to sign in (accounts are only
+        // provisioned via an organisation invite), regardless of emailHasAccount.
+        redirectPath = `/signin#email=${email}`;
       }
 
       await authClient.signOut({
