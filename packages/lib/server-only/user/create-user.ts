@@ -12,10 +12,10 @@ export interface CreateUserOptions {
   password: string;
   signature?: string | null;
   /**
-   * When true, the new user does not get a personal organisation created for
-   * them. Used by the invite-acceptance flow (sealflow#14), where the user is
-   * provisioned directly into the inviting organisation rather than a personal
-   * space.
+   * When true (the default), the new user does not get a personal organisation.
+   * sealflow#14: sealflow is invite-only with no personal-org concept — users
+   * are provisioned into a tenant organisation via invite. Pass `false` only
+   * for an explicit opt-in (e.g. seeding).
    */
   skipPersonalOrganisation?: boolean;
   /**
@@ -32,7 +32,7 @@ export const createUser = async ({
   email,
   password,
   signature,
-  skipPersonalOrganisation = false,
+  skipPersonalOrganisation = true,
   emailVerified = false,
 }: CreateUserOptions) => {
   const hashedPassword = await hash(password, SALT_ROUNDS);
@@ -94,23 +94,25 @@ export const createUser = async ({
 
 export type OnCreateUserHookOptions = {
   /**
-   * When true, do not create a "Personal Organisation" for the new user.
-   * Used by the Organisation SSO signup path, where the user is intended
-   * to operate inside the SSO organisation rather than a personal space.
+   * Whether to skip creating a "Personal Organisation" for the new user.
    *
-   * Defaults to false — preserves the historical behaviour of creating a
-   * personal organisation for every new user.
+   * sealflow#14: sealflow is invite-only and has no personal-organisation
+   * concept — every user is provisioned into a tenant organisation via invite.
+   * Personal-org creation is therefore OPT-IN: it only runs when this is
+   * explicitly set to `false`. Left undefined/true, no personal org is created.
+   * (Upstream Documenso created one for every new user by default.)
    */
   skipPersonalOrganisation?: boolean;
 };
 
 /**
- * Should be run after a user is created, example during email password signup or google sign in.
+ * Should be run after a user is created, e.g. during invite acceptance or
+ * OAuth sign-in.
  *
  * @returns User
  */
 export const onCreateUserHook = async (user: User, options: OnCreateUserHookOptions = {}) => {
-  if (!options.skipPersonalOrganisation) {
+  if (options.skipPersonalOrganisation === false) {
     await createPersonalOrganisation({ userId: user.id });
   }
 
