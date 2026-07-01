@@ -4,7 +4,7 @@ import { cn } from '@documenso/ui/lib/utils';
 import { Button } from '@documenso/ui/primitives/button';
 import { msg } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
-import { ChevronLeft, PlusIcon } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { isRouteErrorResponse, Link, Outlet } from 'react-router';
 
@@ -62,25 +62,9 @@ export default function PublicProfileLayout() {
             </Link>
 
             <div className="flex flex-row items-center justify-center">
-              <p className="mr-4 text-muted-foreground">
-                <span className="text-sm sm:hidden">
-                  <Trans>Want your own public profile?</Trans>
-                </span>
-                <span className="hidden text-sm sm:block">
-                  <Trans>Like to have your own public profile with agreements?</Trans>
-                </span>
-              </p>
-
               <Button asChild variant="secondary">
-                <Link to="/signup">
-                  <div className="hidden flex-row items-center sm:flex">
-                    <PlusIcon className="mr-1 h-5 w-5" />
-                    <Trans>Create now</Trans>
-                  </div>
-
-                  <span className="sm:hidden">
-                    <Trans>Create</Trans>
-                  </span>
+                <Link to="/signin">
+                  <Trans>Sign in</Trans>
                 </Link>
               </Button>
             </div>

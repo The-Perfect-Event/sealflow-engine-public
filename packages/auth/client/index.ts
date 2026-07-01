@@ -15,6 +15,7 @@ import type {
   TViewTwoFactorRecoveryCodesRequestSchema,
 } from '../server/routes/two-factor.types';
 import type {
+  TAcceptOrganisationInviteSchema,
   TForgotPasswordSchema,
   TResendVerifyEmailSchema,
   TResetPasswordSchema,
@@ -183,6 +184,16 @@ export class AuthClient {
 
     signUp: async (data: TSignUpSchema) => {
       const response = await this.client['email-password']['signup'].$post({ json: data });
+
+      if (!response.ok) {
+        const error = await response.json();
+
+        throw AppError.parseError(error);
+      }
+    },
+
+    acceptOrganisationInvite: async (data: TAcceptOrganisationInviteSchema) => {
+      const response = await this.client['email-password']['accept-organisation-invite'].$post({ json: data });
 
       if (!response.ok) {
         const error = await response.json();

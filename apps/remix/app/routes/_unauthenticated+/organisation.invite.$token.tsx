@@ -5,6 +5,8 @@ import { Button } from '@documenso/ui/primitives/button';
 import { Trans } from '@lingui/react/macro';
 import { Link } from 'react-router';
 
+import { AcceptOrganisationInviteForm } from '~/components/forms/accept-organisation-invite';
+
 import type { Route } from './+types/organisation.invite.$token';
 
 export async function loader({ params, request }: Route.LoaderArgs) {
@@ -56,7 +58,8 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   if (!user) {
     return {
-      state: 'LoginRequired',
+      state: 'AccountRequired',
+      token: organisationMemberInvite.token,
       email: organisationMemberInvite.email,
       organisationName: organisationMemberInvite.organisation.name,
     } as const;
@@ -97,9 +100,9 @@ export default function AcceptInvitationPage({ loaderData }: Route.ComponentProp
     );
   }
 
-  if (data.state === 'LoginRequired') {
+  if (data.state === 'AccountRequired') {
     return (
-      <div>
+      <div className="w-screen max-w-md px-4">
         <h1 className="font-semibold text-4xl">
           <Trans>Organisation invitation</Trans>
         </h1>
@@ -110,15 +113,11 @@ export default function AcceptInvitationPage({ loaderData }: Route.ComponentProp
           </Trans>
         </p>
 
-        <p className="mt-1 mb-4 text-muted-foreground text-sm">
-          <Trans>To accept this invitation you must create an account.</Trans>
+        <p className="mt-1 mb-6 text-muted-foreground text-sm">
+          <Trans>Set up your account below to accept this invitation.</Trans>
         </p>
 
-        <Button asChild>
-          <Link to={`/signup#email=${encodeURIComponent(data.email)}`}>
-            <Trans>Create account</Trans>
-          </Link>
-        </Button>
+        <AcceptOrganisationInviteForm token={data.token} email={data.email} />
       </div>
     );
   }

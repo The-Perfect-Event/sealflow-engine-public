@@ -11,9 +11,30 @@ export interface CreateUserOptions {
   email: string;
   password: string;
   signature?: string | null;
+  /**
+   * When true (the default), the new user does not get a personal organisation.
+   * sealflow#14: sealflow is invite-only with no personal-org concept — users
+   * are provisioned into a tenant organisation via invite. Pass `false` only
+   * for an explicit opt-in (e.g. seeding).
+   */
+  skipPersonalOrganisation?: boolean;
+  /**
+   * When true, the account is created already email-verified. Used by the
+   * invite-acceptance flow (sealflow#14): possession of the one-time invite
+   * token emailed to the address already proves ownership, so no separate
+   * email-verification round-trip is required.
+   */
+  emailVerified?: boolean;
 }
 
-export const createUser = async ({ name, email, password, signature }: CreateUserOptions) => {
+export const createUser = async ({
+  name,
+  email,
+  password,
+  signature,
+  skipPersonalOrganisation = true,
+  emailVerified = false,
+}: CreateUserOptions) => {
   const hashedPassword = await hash(password, SALT_ROUNDS);
 
   const userExists = await prisma.user.findFirst({
@@ -32,6 +53,7 @@ export const createUser = async ({ name, email, password, signature }: CreateUse
       email: email.toLowerCase(),
       password: hashedPassword, // Todo: (RR7) Drop password.
       signature,
+      emailVerified: emailVerified ? new Date() : null,
     },
   });
 
@@ -62,7 +84,7 @@ export const createUser = async ({ name, email, password, signature }: CreateUse
   // });
 
   // Not used at the moment, uncomment if required.
-  await onCreateUserHook(user).catch((err) => {
+  await onCreateUserHook(user, { skipPersonalOrganisation }).catch((err) => {
     // Todo: (RR7) Add logging.
     console.error(err);
   });
@@ -72,23 +94,25 @@ export const createUser = async ({ name, email, password, signature }: CreateUse
 
 export type OnCreateUserHookOptions = {
   /**
-   * When true, do not create a "Personal Organisation" for the new user.
-   * Used by the Organisation SSO signup path, where the user is intended
-   * to operate inside the SSO organisation rather than a personal space.
+   * Whether to skip creating a "Personal Organisation" for the new user.
    *
-   * Defaults to false — preserves the historical behaviour of creating a
-   * personal organisation for every new user.
+   * sealflow#14: sealflow is invite-only and has no personal-organisation
+   * concept — every user is provisioned into a tenant organisation via invite.
+   * Personal-org creation is therefore OPT-IN: it only runs when this is
+   * explicitly set to `false`. Left undefined/true, no personal org is created.
+   * (Upstream Documenso created one for every new user by default.)
    */
   skipPersonalOrganisation?: boolean;
 };
 
 /**
- * Should be run after a user is created, example during email password signup or google sign in.
+ * Should be run after a user is created, e.g. during invite acceptance or
+ * OAuth sign-in.
  *
  * @returns User
  */
 export const onCreateUserHook = async (user: User, options: OnCreateUserHookOptions = {}) => {
-  if (!options.skipPersonalOrganisation) {
+  if (options.skipPersonalOrganisation === false) {
     await createPersonalOrganisation({ userId: user.id });
   }
 

@@ -7,10 +7,13 @@ import { getSubscriptionClaim } from '@documenso/lib/server-only/subscription/ge
 import { INTERNAL_CLAIM_ID } from '@documenso/lib/types/subscription';
 import { prisma } from '@documenso/prisma';
 import { OrganisationType, SubscriptionStatus } from '@prisma/client';
-import { authenticatedProcedure } from '../trpc';
+import { adminProcedure } from '../trpc';
 import { ZCreateOrganisationRequestSchema, ZCreateOrganisationResponseSchema } from './create-organisation.types';
 
-export const createOrganisationRoute = authenticatedProcedure
+// sealflow#14: invite-only. Only platform admins (super admins) may create
+// organisations/tenants; regular members are provisioned into existing
+// organisations via invite. Upstream this was an `authenticatedProcedure`.
+export const createOrganisationRoute = adminProcedure
   // .meta(createOrganisationMeta)
   .input(ZCreateOrganisationRequestSchema)
   .output(ZCreateOrganisationResponseSchema)

@@ -13,6 +13,7 @@ import { setupTwoFactorAuthentication } from '@documenso/lib/server-only/2fa/set
 import { validateTwoFactorAuthentication } from '@documenso/lib/server-only/2fa/validate-2fa';
 import { viewBackupCodes } from '@documenso/lib/server-only/2fa/view-backup-codes';
 import { verifyCaptchaToken } from '@documenso/lib/server-only/captcha/verify-captcha';
+import { acceptOrganisationInviteWithAccount } from '@documenso/lib/server-only/organisation/accept-organisation-invite-with-account';
 import { rateLimitResponse } from '@documenso/lib/server-only/rate-limit/rate-limit-middleware';
 import {
   forgotPasswordRateLimit,
@@ -48,6 +49,7 @@ import { onAuthorize } from '../lib/utils/authorizer';
 import { getSession } from '../lib/utils/get-session';
 import type { HonoAuthContext } from '../types/context';
 import {
+  ZAcceptOrganisationInviteSchema,
   ZForgotPasswordSchema,
   ZResendVerifyEmailSchema,
   ZResetPasswordSchema,
@@ -234,6 +236,44 @@ export const emailPasswordRoute = new Hono<HonoAuthContext>()
         email: user.email,
       },
     });
+
+    return c.text('OK', 201);
+  })
+  /**
+   * Invite-only account-acceptance endpoint (sealflow#14).
+   *
+   * Replaces public signup for new members: consumes a one-time organisation
+   * invite token, provisions the user directly into the inviting organisation
+   * (no personal organisation, email pre-verified), and signs them in. There is
+   * no captcha and no signup kill-switch check — the invite token is the gate.
+   */
+  .post('/accept-organisation-invite', sValidator('json', ZAcceptOrganisationInviteSchema), async (c) => {
+    const requestMetadata = c.get('requestMetadata');
+
+    const { token, name, password, signature } = c.req.valid('json');
+
+    const signupLimitResult = await signupRateLimit.check({
+      ip: requestMetadata.ipAddress ?? 'unknown',
+    });
+
+    const signupLimited = rateLimitResponse(c, signupLimitResult);
+
+    if (signupLimited) {
+      throw new HTTPException(429, {
+        res: signupLimited,
+      });
+    }
+
+    const user = await acceptOrganisationInviteWithAccount({
+      token,
+      name,
+      password,
+      signature,
+    });
+
+    // The emailed invite token proves ownership, so the account is created
+    // already verified — sign the new member in immediately.
+    await onAuthorize({ userId: user.id }, c);
 
     return c.text('OK', 201);
   })

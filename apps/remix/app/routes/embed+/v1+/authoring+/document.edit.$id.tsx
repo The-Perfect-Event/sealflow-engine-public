@@ -113,7 +113,7 @@ export default function EmbeddingAuthoringDocumentEditPage() {
       distributionMethod: document.documentMeta?.distributionMethod ?? DocumentDistributionMethod.EMAIL,
       emailSettings: document.documentMeta?.emailSettings ?? ZDocumentEmailSettingsSchema.parse({}),
       timezone: document.documentMeta?.timezone ?? DEFAULT_DOCUMENT_TIME_ZONE,
-      signingOrder: document.documentMeta?.signingOrder ?? DocumentSigningOrder.PARALLEL,
+      signingOrder: document.documentMeta?.signingOrder ?? DocumentSigningOrder.SEQUENTIAL,
       allowDictateNextSigner: document.documentMeta?.allowDictateNextSigner ?? false,
       language: isValidLanguageCode(document.documentMeta?.language) ? document.documentMeta.language : undefined,
       signatureTypes: signatureTypes,

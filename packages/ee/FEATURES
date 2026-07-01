@@ -1,11 +1,7 @@
-This file lists all features currently licensed under the Documenso Enterprise Edition (the "Commercial License”)
-Copyright (c) 2023 Documenso, Inc
+Intentionally empty.
 
-- The Stripe Billing Module
-- Organisation Authentication Portal
-- Document Action Reauthentication (Passkeys and 2FA)
-- 21 CFR
-- Email domains
-- Embed authoring
-- Embed authoring white label
-- Enterprise level support + possible SLAs and license changes
+The original Documenso Enterprise Edition module list has no relevance to this
+fork. None of the listed features — Stripe billing, plan tiers, CSC/QES
+signing, SES email domains — are enabled or implemented here. The modules under
+`server-only/` are AGPL-3.0 no-op stubs that preserve the import surface only
+(see sealflow#18).

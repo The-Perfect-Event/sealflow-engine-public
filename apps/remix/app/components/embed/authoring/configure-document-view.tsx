@@ -60,7 +60,7 @@ export const ConfigureDocumentView = ({
         redirectUrl: defaultValues?.meta?.redirectUrl || '',
         language: defaultValues?.meta?.language || 'en',
         signatureTypes: defaultValues?.meta?.signatureTypes || [],
-        signingOrder: defaultValues?.meta?.signingOrder || DocumentSigningOrder.PARALLEL,
+        signingOrder: defaultValues?.meta?.signingOrder || DocumentSigningOrder.SEQUENTIAL,
         allowDictateNextSigner: defaultValues?.meta?.allowDictateNextSigner || false,
         externalId: defaultValues?.meta?.externalId || '',
       },
