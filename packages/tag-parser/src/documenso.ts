@@ -10,8 +10,9 @@
  *   - `fieldMeta.type` is the lower-case field kind; `required` lives in fieldMeta.
  *   - Documenso `FieldType` enum covers all of this library's types 1:1.
  */
-import type { ParsedField, FieldType, PageSize, ParseResult } from './types.js';
+
 import { PT_PER_MM } from './constants.js';
+import type { FieldType, PageSize, ParsedField, ParseResult } from './types.js';
 
 /** Documenso Prisma `FieldType` values (uppercase) — identical to ours. */
 export type DocumensoFieldType = FieldType;
@@ -72,12 +73,24 @@ export function toDocumensoFieldCreate(
 ): DocumensoFieldCreate {
   const widthPt = field.dimensions.widthMm * PT_PER_MM;
   const heightPt = field.dimensions.heightMm * PT_PER_MM;
+
+  // `position.yPt` is the top of the tag glyph, and boxes grow downward by
+  // their (per-type) height. Text-family fields are ~one line tall, so a
+  // top-anchored box lands on the line. Signature/initial boxes are taller,
+  // so top-anchoring drops the rendered mark well below the signing line.
+  // Anchor those two by the tag BASELINE instead (box bottom on the line,
+  // extending upward), so a signature/initial sits on its line like the text
+  // fields do. Baseline = tag glyph top + glyph height (boundingBox.heightPt).
+  const isBaselineAnchored = field.type === 'SIGNATURE' || field.type === 'INITIALS';
+  const tagBaselineYpt = field.position.yPt + field.boundingBox.heightPt;
+  const topYpt = isBaselineAnchored ? tagBaselineYpt - heightPt : field.position.yPt;
+
   return {
     type: field.type,
     recipientId,
     page: field.position.page,
     positionX: clampPct((field.position.xPt / pageSize.widthPt) * 100),
-    positionY: clampPct((field.position.yPt / pageSize.heightPt) * 100),
+    positionY: clampPct((topYpt / pageSize.heightPt) * 100),
     width: clampPct((widthPt / pageSize.widthPt) * 100),
     height: clampPct((heightPt / pageSize.heightPt) * 100),
     fieldMeta: { type: FIELD_META_TYPE[field.type], required: field.required },

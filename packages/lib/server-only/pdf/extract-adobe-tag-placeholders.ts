@@ -29,7 +29,9 @@ export const extractAdobeTagPlaceholders = async (
   // `^r\d+$/i` pattern recognises them. Order follows result.recipients
   // (already deduped + sorted by the parser).
   const roleToIndex = new Map<string, number>();
-  result.recipients.forEach((role, i) => roleToIndex.set(role, i + 1));
+  result.recipients.forEach((role, i) => {
+    roleToIndex.set(role, i + 1);
+  });
 
   const pageSizeByPage = new Map(result.pageSizes.map((p) => [p.page, p]));
 
@@ -43,13 +45,32 @@ export const extractAdobeTagPlaceholders = async (
       continue;
     }
 
+    // Adobe text subtypes (phone/title/company/…) have no dedicated Documenso
+    // field type, so they stay TEXT — but surface the intent as a label +
+    // placeholder so signers see e.g. a "Phone" field, not a bare text box.
+    const textSubtypeLabel = field.type === 'TEXT' && field.subtype ? TEXT_SUBTYPE_LABEL[field.subtype] : undefined;
+
     const fieldAndMeta: TFieldAndMeta = ZEnvelopeFieldAndMetaSchema.parse({
       type: field.type,
       fieldMeta: {
         type: fieldMetaTypeFor(field),
         required: field.required,
+        ...(textSubtypeLabel ? { label: textSubtypeLabel, placeholder: textSubtypeLabel } : {}),
       },
     });
+
+    const heightPt = field.dimensions.heightMm * PT_PER_MM;
+
+    // `position.yPt` is the top of the tag glyph, and PlaceholderInfo.y is the
+    // field-box TOP (boxes grow downward). Text-family fields are ~one line
+    // tall, so a top-anchored box lands on the line. Signature/initial boxes
+    // are taller, so top-anchoring drops the rendered mark well below the
+    // signing line. Anchor those two by the tag BASELINE instead (box bottom on
+    // the line, extending upward) so they sit on their line like text fields.
+    // Baseline (top-origin) = tag glyph top + glyph height (boundingBox.heightPt).
+    const isBaselineAnchored = field.type === 'SIGNATURE' || field.type === 'INITIALS';
+    const tagBaselineYpt = field.position.yPt + field.boundingBox.heightPt;
+    const yPt = isBaselineAnchored ? tagBaselineYpt - heightPt : field.position.yPt;
 
     placeholders.push({
       // Raw tag preserved for downstream logging / debugging.
@@ -59,9 +80,9 @@ export const extractAdobeTagPlaceholders = async (
       fieldAndMeta,
       page: field.position.page,
       x: field.position.xPt,
-      y: field.position.yPt,
+      y: yPt,
       width: field.dimensions.widthMm * PT_PER_MM,
-      height: field.dimensions.heightMm * PT_PER_MM,
+      height: heightPt,
       pageWidth: pageSize.widthPt,
       pageHeight: pageSize.heightPt,
     });
@@ -77,6 +98,18 @@ export const extractAdobeTagPlaceholders = async (
  * Map the parser's `FieldType` (uppercase) to the engine's `fieldMeta.type`
  * discriminator (lowercase).
  */
+/**
+ * Human labels for Adobe text subtypes that Documenso has no dedicated field
+ * type for. Applied as the TEXT field's label + placeholder.
+ */
+const TEXT_SUBTYPE_LABEL: Record<string, string> = {
+  phone: 'Phone',
+  title: 'Title',
+  company: 'Company',
+  address: 'Address',
+  url: 'URL',
+};
+
 const fieldMetaTypeFor = (field: ParsedField): string => {
   switch (field.type) {
     case 'SIGNATURE':
