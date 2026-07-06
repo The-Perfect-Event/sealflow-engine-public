@@ -49,6 +49,9 @@ type GenerateCertificateOptions = {
   envelopeId: string;
   qrToken: string | null;
   hidePoweredBy: boolean;
+  /** Brand-derived signature-thumbnail accent colours (rgba); fall back to the default green. */
+  signatureBorderColor?: string;
+  signatureShadowColor?: string;
   i18n: I18n;
   envelopeOwner: {
     name: string;
@@ -201,6 +204,8 @@ type RenderColumnOptions = {
     name: string;
     email: string;
   };
+  signatureBorderColor?: string;
+  signatureShadowColor?: string;
 };
 
 const renderColumnOne = (options: RenderColumnOptions) => {
@@ -269,7 +274,7 @@ const renderColumnOne = (options: RenderColumnOptions) => {
 };
 
 const renderColumnTwo = (options: RenderColumnOptions) => {
-  const { recipient, width, i18n } = options;
+  const { recipient, width, i18n, signatureBorderColor, signatureShadowColor } = options;
 
   // Column 2: Signature
   const column = new Konva.Group();
@@ -334,7 +339,7 @@ const renderColumnTwo = (options: RenderColumnOptions) => {
       y: 2,
       width: maxSignatureWidth,
       height: signatureHeight,
-      stroke: 'rgba(122, 196, 85, 0.6)',
+      stroke: signatureBorderColor ?? 'rgba(122, 196, 85, 0.6)',
       strokeWidth: 1,
       cornerRadius: 8,
     });
@@ -345,7 +350,7 @@ const renderColumnTwo = (options: RenderColumnOptions) => {
       y: 0,
       width: maxSignatureWidth + 4,
       height: signatureHeight + 4,
-      stroke: 'rgba(122, 196, 85, 0.1)',
+      stroke: signatureShadowColor ?? 'rgba(122, 196, 85, 0.1)',
       strokeWidth: 4,
       cornerRadius: 8,
     });
@@ -499,10 +504,12 @@ type RenderRowOptions = {
     name: string;
     email: string;
   };
+  signatureBorderColor?: string;
+  signatureShadowColor?: string;
 };
 
 const renderRow = (options: RenderRowOptions) => {
-  const { recipient, columnWidths, i18n, envelopeOwner } = options;
+  const { recipient, columnWidths, i18n, envelopeOwner, signatureBorderColor, signatureShadowColor } = options;
 
   const rowGroup = new Konva.Group();
 
@@ -535,6 +542,8 @@ const renderRow = (options: RenderRowOptions) => {
     width: columnWidths[1],
     i18n,
     envelopeOwner,
+    signatureBorderColor,
+    signatureShadowColor,
   });
   columnTwoGroup.setAttrs({
     x: rowPadding + columnWidths[0],
@@ -636,10 +645,13 @@ type GroupRowsIntoPagesOptions = {
     name: string;
     email: string;
   };
+  signatureBorderColor?: string;
+  signatureShadowColor?: string;
 };
 
 const groupRowsIntoPages = (options: GroupRowsIntoPagesOptions) => {
-  const { recipients, maxHeight, i18n, columnWidths, envelopeOwner } = options;
+  const { recipients, maxHeight, i18n, columnWidths, envelopeOwner, signatureBorderColor, signatureShadowColor } =
+    options;
 
   const rowHeader = renderRowHeader({ columnWidths, i18n });
   const rowHeaderHeight = rowHeader.getClientRect().height;
@@ -651,7 +663,14 @@ const groupRowsIntoPages = (options: GroupRowsIntoPagesOptions) => {
 
   // Group rows into pages.
   for (const recipient of recipients) {
-    const row = renderRow({ recipient, columnWidths, i18n, envelopeOwner });
+    const row = renderRow({
+      recipient,
+      columnWidths,
+      i18n,
+      envelopeOwner,
+      signatureBorderColor,
+      signatureShadowColor,
+    });
 
     const rowHeight = row.getClientRect().height;
 
@@ -721,6 +740,8 @@ export async function renderCertificate({
   envelopeId,
   qrToken,
   hidePoweredBy,
+  signatureBorderColor,
+  signatureShadowColor,
   i18n,
   envelopeOwner,
   pageWidth,
@@ -751,6 +772,8 @@ export async function renderCertificate({
     columnWidths,
     i18n,
     envelopeOwner,
+    signatureBorderColor,
+    signatureShadowColor,
   });
 
   const tables = renderTables({ groupedRows, columnWidths, i18n });

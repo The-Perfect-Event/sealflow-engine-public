@@ -3,13 +3,15 @@ import { i18n } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import type { DocumentMeta, Envelope, Field, Recipient, Signature } from '@prisma/client';
 import { FieldType } from '@prisma/client';
+import { colord } from 'colord';
 import { prop, sortBy } from 'remeda';
 import { match } from 'ts-pattern';
-
 import { ZSupportedLanguageCodeSchema } from '../../constants/i18n';
 import type { TDocumentAuditLogBaseSchema } from '../../types/document-audit-logs';
 import { extractDocumentAuthMethods } from '../../utils/document-auth';
 import { getTranslations } from '../../utils/i18n';
+
+import { loadRecipientBrandingByTeamId } from '../branding/load-recipient-branding';
 import { getDocumentCertificateAuditLogs } from '../document/get-document-certificate-audit-logs';
 import { getOrganisationClaimByTeamId } from '../organisation/get-organisation-claims';
 import { renderCertificate } from './render-certificate';
@@ -43,13 +45,22 @@ export const generateCertificatePdf = async (options: GenerateCertificatePdfOpti
 
   const documentLanguage = ZSupportedLanguageCodeSchema.parse(language);
 
-  const [organisationClaim, auditLogs, messages] = await Promise.all([
+  const [organisationClaim, branding, auditLogs, messages] = await Promise.all([
     getOrganisationClaimByTeamId({ teamId: envelope.teamId }),
+    loadRecipientBrandingByTeamId({ teamId: envelope.teamId }),
     getDocumentCertificateAuditLogs({
       envelopeId: envelope.id,
     }),
     getTranslations(documentLanguage),
   ]);
+
+  // Derive the certificate's signature-thumbnail accent from the org brand
+  // colour when custom branding is enabled; otherwise leave undefined so the
+  // renderer keeps its default green.
+  const brandPrimary = branding.colors?.primary;
+  const brandAccent = brandPrimary && colord(brandPrimary).isValid() ? colord(brandPrimary) : null;
+  const signatureBorderColor = brandAccent?.alpha(0.6).toRgbString();
+  const signatureShadowColor = brandAccent?.alpha(0.1).toRgbString();
 
   i18n.loadAndActivate({
     locale: documentLanguage,
@@ -139,6 +150,8 @@ export const generateCertificatePdf = async (options: GenerateCertificatePdfOpti
     envelopeId: envelope.id,
     qrToken: envelope.qrToken,
     hidePoweredBy: organisationClaim.flags.hidePoweredBy ?? false,
+    signatureBorderColor,
+    signatureShadowColor,
     pageWidth,
     pageHeight,
     i18n,
