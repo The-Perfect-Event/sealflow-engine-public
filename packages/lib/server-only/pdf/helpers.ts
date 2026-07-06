@@ -137,8 +137,12 @@ const extractRecipientPlaceholder = (placeholder: string): RecipientPlaceholderI
   const recipientIndex = Number(indexMatch[1]);
 
   return {
-    email: `recipient.${recipientIndex}@documenso.com`,
-    name: `Recipient ${recipientIndex}`,
+    // Non-routable `.local` placeholder (not documenso.com): clearly a
+    // fill-me-in address, and an accidental send before real recipients are
+    // set bounces rather than emailing a real domain. Replaced with the real
+    // signer's email before the document is sent.
+    email: `signer${recipientIndex}@placeholder.local`,
+    name: `Signer ${recipientIndex}`,
     recipientIndex,
   };
 };

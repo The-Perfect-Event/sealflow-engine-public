@@ -106,7 +106,7 @@ test.describe('PDF Placeholders with single recipient', () => {
         where: { envelopeId },
       });
 
-      const placeholderRecipient = recipients.find((recipient) => recipient.email === 'recipient.1@documenso.com');
+      const placeholderRecipient = recipients.find((recipient) => recipient.email === 'signer1@placeholder.local');
 
       const defaultRecipient = recipients.find((recipient) => recipient.email === user.email);
 
@@ -128,8 +128,8 @@ test.describe('PDF Placeholders with single recipient', () => {
 
     // V2 editor shows recipients on the upload page under "Recipients" heading.
     await expect(page.getByRole('heading', { name: 'Recipients' })).toBeVisible();
-    await expect(page.getByTestId('signer-email-input').first()).toHaveValue('recipient.1@documenso.com');
-    await expect(page.getByLabel('Name').first()).toHaveValue('Recipient 1');
+    await expect(page.getByTestId('signer-email-input').first()).toHaveValue('signer1@placeholder.local');
+    await expect(page.getByLabel('Name').first()).toHaveValue('Signer 1');
   });
 
   test('[AUTO_PLACING_FIELDS]: should automatically place fields from PDF placeholders', async ({ page }) => {
@@ -175,11 +175,11 @@ test.describe('PDF Placeholders with multiple recipients', () => {
     // V2 editor shows recipients on the upload page.
     await expect(page.getByRole('heading', { name: 'Recipients' })).toBeVisible();
 
-    await expect(page.getByTestId('signer-email-input').first()).toHaveValue('recipient.1@documenso.com');
+    await expect(page.getByTestId('signer-email-input').first()).toHaveValue('signer1@placeholder.local');
 
-    await expect(page.getByTestId('signer-email-input').nth(1)).toHaveValue('recipient.2@documenso.com');
+    await expect(page.getByTestId('signer-email-input').nth(1)).toHaveValue('signer2@placeholder.local');
 
-    await expect(page.getByTestId('signer-email-input').nth(2)).toHaveValue('recipient.3@documenso.com');
+    await expect(page.getByTestId('signer-email-input').nth(2)).toHaveValue('signer3@placeholder.local');
 
     // Verify recipients via the database for name validation since the v2 editor
     // only shows the "Name" label on the first recipient row.
@@ -190,9 +190,9 @@ test.describe('PDF Placeholders with multiple recipients', () => {
       });
 
       expect(recipients).toHaveLength(3);
-      expect(recipients[0].name).toBe('Recipient 1');
-      expect(recipients[1].name).toBe('Recipient 2');
-      expect(recipients[2].name).toBe('Recipient 3');
+      expect(recipients[0].name).toBe('Signer 1');
+      expect(recipients[1].name).toBe('Signer 2');
+      expect(recipients[2].name).toBe('Signer 3');
     }).toPass();
   });
 
