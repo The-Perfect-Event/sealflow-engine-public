@@ -18,6 +18,9 @@ build
 # misc
 .DS_Store
 *.pem
+# local dev signing cert (throwaway self-signed; never commit — see sealflow docs/local-dev.md)
+*.p12
+cert.p12
 
 # debug
 npm-debug.log*
