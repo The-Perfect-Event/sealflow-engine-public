@@ -9,6 +9,28 @@ versioning is our own `v1.x.y` line (not upstream Documenso's).
 
 Deploy procedure: [`sealflow/docs/operations-runbook.md`](https://github.com/The-Perfect-Event/sealflow) → "Deploy a sealflow-engine version bump".
 
+## [v1.2.2] — 2026-07-06
+
+Signer-experience white-label completion and a filename fix, from a review of the
+live signing flow (project-management#98).
+
+### Changed
+- **Signer flow is fully white-labeled** — removed the post-signing "Share your
+  signing experience" card (hardcoded `@documenso` tweet + a `/share/…` link that
+  didn't work) from both the signer completion page and the sender dashboard;
+  the recipient-facing browser tab title is now "Sign Document" (was
+  "Sign Document - Sealflow"); removed the "Check out Sealflow" marketing text on
+  cancelled/expired states; and the signing header shows the sender org's logo or
+  nothing — never a Sealflow fallback. (Org branding colours + logo were already
+  applied via the token→team branding pipeline.)
+
+### Fixed
+- **Doubled file extension** — uploaded document titles are now stored without the
+  `.pdf` extension (`Contract.pdf` → title `Contract`), matching the download layer
+  which re-adds exactly one extension. Previously the extension leaked into the
+  stored title and doubled up in derived names. Normalised at every title-creation
+  site via a shared `stripPdfExtension` helper (+ unit test).
+
 ## [v1.2.1] — 2026-07-06
 
 Hotfix for a regression introduced in v1.2.0.
@@ -84,6 +106,7 @@ Initial owned hard fork + production cutover (sealflow#13).
 ### Fixed
 - Branding/logo and disclosure-mirror CI refspec fixes (v1.0.1–v1.0.3).
 
+[v1.2.2]: https://github.com/The-Perfect-Event/sealflow-engine/releases/tag/v1.2.2
 [v1.2.1]: https://github.com/The-Perfect-Event/sealflow-engine/releases/tag/v1.2.1
 [v1.2.0]: https://github.com/The-Perfect-Event/sealflow-engine/releases/tag/v1.2.0
 [v1.1.0]: https://github.com/The-Perfect-Event/sealflow-engine/releases/tag/v1.1.0

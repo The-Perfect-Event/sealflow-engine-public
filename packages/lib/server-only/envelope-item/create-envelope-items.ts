@@ -8,6 +8,7 @@ import { normalizePdf } from '@documenso/lib/server-only/pdf/normalize-pdf';
 import { DOCUMENT_AUDIT_LOG_TYPE } from '@documenso/lib/types/document-audit-logs';
 import type { ApiRequestMetadata } from '@documenso/lib/universal/extract-request-metadata';
 import { prefixedId } from '@documenso/lib/universal/id';
+import { stripPdfExtension } from '@documenso/lib/universal/strip-pdf-extension';
 import { putPdfFileServerSide } from '@documenso/lib/universal/upload/put-file.server';
 import { createDocumentAuditLogData } from '@documenso/lib/utils/document-audit-logs';
 import { prisma } from '@documenso/prisma';
@@ -67,7 +68,7 @@ export const UNSAFE_createEnvelopeItems = async ({
 
       return {
         id: prefixedId('envelope_item'),
-        title: file.name,
+        title: stripPdfExtension(file.name),
         clientId,
         documentDataId: documentData.id,
         placeholders,

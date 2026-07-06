@@ -11,6 +11,7 @@ import { ZDefaultRecipientsSchema } from '@documenso/lib/types/default-recipient
 import { DOCUMENT_AUDIT_LOG_TYPE } from '@documenso/lib/types/document-audit-logs';
 import type { ApiRequestMetadata } from '@documenso/lib/universal/extract-request-metadata';
 import { nanoid, prefixedId } from '@documenso/lib/universal/id';
+import { stripPdfExtension } from '@documenso/lib/universal/strip-pdf-extension';
 import { createDocumentAuditLogData } from '@documenso/lib/utils/document-audit-logs';
 import { prisma } from '@documenso/prisma';
 import type { DocumentMeta, DocumentVisibility, TemplateType } from '@prisma/client';
@@ -261,7 +262,7 @@ export const createEnvelope = async ({
         });
 
         return {
-          title: titleToUse.endsWith('.pdf') ? titleToUse.slice(0, -4) : titleToUse,
+          title: stripPdfExtension(titleToUse),
           documentDataId: newDocumentData.id,
           order: item.order,
         };
@@ -371,7 +372,7 @@ export const createEnvelope = async ({
         secondaryId,
         internalVersion,
         type,
-        title,
+        title: stripPdfExtension(title),
         signatureLevel,
         qrToken: prefixedId('qr'),
         externalId,
@@ -380,7 +381,7 @@ export const createEnvelope = async ({
           createMany: {
             data: envelopeItems.map((item, i) => ({
               id: prefixedId('envelope_item'),
-              title: item.title || title,
+              title: stripPdfExtension(item.title || title),
               order: item.order !== undefined ? item.order : i + 1,
               documentDataId: item.documentDataId,
             })),
@@ -633,7 +634,7 @@ export const createEnvelope = async ({
           },
           metadata: requestMetadata,
           data: {
-            title,
+            title: stripPdfExtension(title),
             source: {
               type: DocumentSource.DOCUMENT,
             },

@@ -11,14 +11,11 @@ import { Separator } from '@documenso/ui/primitives/separator';
 import { Plural, Trans } from '@lingui/react/macro';
 import { EnvelopeType, RecipientRole } from '@prisma/client';
 import { BanIcon, DownloadCloudIcon } from 'lucide-react';
-import { Link } from 'react-router';
 import { match } from 'ts-pattern';
 
 import { EnvelopeDownloadDialog } from '~/components/dialogs/envelope-download-dialog';
 import { useEmbedSigningContext } from '~/components/embed/embed-signing-context';
-import { BrandingLogo } from '~/components/general/branding-logo';
 
-import { BrandingLogoIcon } from '../branding-logo-icon';
 import { DocumentSigningRejectDialog } from '../document-signing/document-signing-reject-dialog';
 import { useRequiredEnvelopeSigningContext } from '../document-signing/envelope-signing-provider';
 import { EnvelopeSignerCompleteDialog } from './envelope-signing-complete-dialog';
@@ -33,19 +30,14 @@ export const EnvelopeSignerHeader = () => {
     <nav className="embed--DocumentWidgetHeader flex max-w-screen flex-row justify-between border-border border-b bg-background px-4 py-3 md:px-6">
       {/* Left side - Logo and title */}
       <div className="flex min-w-0 flex-1 items-center space-x-2 md:w-auto md:flex-none">
-        {!isEmbedSigning &&
-          (hasCustomBrandingLogo ? (
-            <img
-              src={`/api/branding/logo/team/${envelope.teamId}`}
-              alt={`${envelope.team.name}'s Logo`}
-              className="h-6 w-auto flex-shrink-0"
-            />
-          ) : (
-            <Link to="/" className="flex-shrink-0">
-              <BrandingLogo className="hidden h-6 w-auto md:block" />
-              <BrandingLogoIcon className="h-6 w-auto md:hidden" />
-            </Link>
-          ))}
+        {/* White-label: show the sender org's logo, or nothing — never a Sealflow fallback. */}
+        {!isEmbedSigning && hasCustomBrandingLogo && (
+          <img
+            src={`/api/branding/logo/team/${envelope.teamId}`}
+            alt={`${envelope.team.name}'s Logo`}
+            className="h-6 w-auto flex-shrink-0"
+          />
+        )}
 
         <h1 title={envelope.title} className="min-w-0 truncate font-semibold text-base text-foreground md:hidden">
           {envelope.title}

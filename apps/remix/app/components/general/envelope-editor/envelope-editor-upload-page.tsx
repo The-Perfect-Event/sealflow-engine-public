@@ -5,6 +5,7 @@ import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/org
 import { APP_DOCUMENT_UPLOAD_SIZE_LIMIT } from '@documenso/lib/constants/app';
 import type { TEditorEnvelope } from '@documenso/lib/types/envelope-editor';
 import { nanoid } from '@documenso/lib/universal/id';
+import { stripPdfExtension } from '@documenso/lib/universal/strip-pdf-extension';
 import { megabytesToBytes } from '@documenso/lib/universal/unit-convertions';
 import { PRESIGNED_ENVELOPE_ITEM_ID_PREFIX } from '@documenso/lib/utils/embed-config';
 import { getEnvelopeItemPermissions } from '@documenso/lib/utils/envelope';
@@ -160,7 +161,7 @@ export const EnvelopeEditorUploadPage = () => {
         return {
           id: nanoid(),
           envelopeItemId: isEmbedded ? `${PRESIGNED_ENVELOPE_ITEM_ID_PREFIX}${nanoid()}` : null,
-          title: file.name,
+          title: stripPdfExtension(file.name),
           file,
           isUploading: isEmbedded ? false : true,
           isReplacing: false,
