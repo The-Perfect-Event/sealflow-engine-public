@@ -50,11 +50,7 @@ export const ResetPasswordTemplate = ({
               </Text>
               <Text className="mt-2 text-base text-muted-foreground">
                 <Trans>
-                  Didn't request a password change? We are here to help you secure your account, just{' '}
-                  <Link className="font-normal text-primary" href="mailto:hi@documenso.com">
-                    contact us
-                  </Link>
-                  .
+                  Didn't request a password change? If this wasn't you, please secure your account immediately.
                 </Trans>
               </Text>
             </Section>

@@ -1,6 +1,6 @@
 import { Trans } from '@lingui/react/macro';
 
-import { Button, Link, Section, Text } from '../components';
+import { Button, Section, Text } from '../components';
 import { TemplateDocumentImage } from './template-document-image';
 
 export type TemplateAdminUserCreatedProps = {
@@ -42,13 +42,7 @@ export const TemplateAdminUserCreated = ({ resetPasswordLink, assetBaseUrl }: Te
 
         <Section className="mt-8">
           <Text className="text-center text-muted-foreground text-sm">
-            <Trans>
-              If you didn't expect this account or have any questions, please{' '}
-              <Link href="mailto:support@documenso.com" className="text-primary">
-                contact support
-              </Link>
-              .
-            </Trans>
+            <Trans>If you didn't expect this account or have any questions, please contact your administrator.</Trans>
           </Text>
         </Section>
       </Section>

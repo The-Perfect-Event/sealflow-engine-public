@@ -56,14 +56,11 @@ export const TemplateFooter = ({ isDocument = true, reportUrl }: TemplateFooterP
         </Text>
       )}
 
-      {!branding.brandingEnabled && (
+      {!branding.brandingHidePoweredBy && (
         <Text className="my-8 text-muted-foreground text-sm">
           Sealflow
           <br />
-          <Link
-            className="text-primary"
-            href="https://github.com/The-Perfect-Event/sealflow-engine-public"
-          >
+          <Link className="text-primary" href="https://github.com/The-Perfect-Event/sealflow-engine-public">
             <Trans>Source code</Trans>
           </Link>
           <br />
