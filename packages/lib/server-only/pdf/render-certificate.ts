@@ -77,9 +77,12 @@ const textMutedForegroundLight = '#929DAE';
 const textForeground = '#000';
 const textMutedForeground = '#64748B';
 const textRejectedRed = '#dc2626';
-const textBase = 10;
-const textSm = 9;
-const textXs = 8;
+// Typography scaled down ~1pt for a cleaner, less oversized certificate
+// (sealflow: cert refinement, directed by Hasham; render-certificate is
+// soft-frozen — cosmetic only, no change to audit content or layout structure).
+const textBase = 9;
+const textSm = 8;
+const textXs = 7;
 const fontMedium = '500';
 
 const columnWidthPercentages = [30, 30, 40];
@@ -89,7 +92,7 @@ const pageTopMargin = 72;
 const pageBottomMargin = 24;
 const contentMaxWidth = 768;
 
-const titleFontSize = 18;
+const titleFontSize = 14;
 
 type RenderLabelAndTextOptions = {
   label: string;
@@ -154,7 +157,7 @@ const renderRowHeader = (options: RenderRowHeaderOptions) => {
 
   const headerFontStyling = {
     fontFamily: 'Inter',
-    fontSize: 11,
+    fontSize: 10,
     fontStyle: fontMedium,
     verticalAlign: 'middle',
     fill: textMutedForeground,
