@@ -125,6 +125,21 @@ export const parseFieldMetaFromPlaceholder = (
   return parsedFieldMeta;
 };
 
+/**
+ * Canonical identity for an auto-created placeholder recipient (index is 1-based).
+ *
+ * Single source of truth: the recipient-CREATION site (create-envelope.ts) and
+ * the recipient-LOOKUP site (findRecipientByPlaceholder, below) MUST agree on
+ * the exact email string, otherwise the lookup can't find the row it created.
+ * Non-routable `.local` (not documenso.com): clearly a fill-me-in address, and
+ * an accidental send before real recipients are set bounces rather than
+ * emailing a real domain. Replaced with the real signer's email before send.
+ */
+export const getPlaceholderRecipientEmail = (recipientIndex: number): string =>
+  `signer${recipientIndex}@placeholder.local`;
+
+export const getPlaceholderRecipientName = (recipientIndex: number): string => `Signer ${recipientIndex}`;
+
 const extractRecipientPlaceholder = (placeholder: string): RecipientPlaceholderInfo => {
   const indexMatch = placeholder.match(/^r(\d+)$/i);
 
@@ -137,12 +152,8 @@ const extractRecipientPlaceholder = (placeholder: string): RecipientPlaceholderI
   const recipientIndex = Number(indexMatch[1]);
 
   return {
-    // Non-routable `.local` placeholder (not documenso.com): clearly a
-    // fill-me-in address, and an accidental send before real recipients are
-    // set bounces rather than emailing a real domain. Replaced with the real
-    // signer's email before the document is sent.
-    email: `signer${recipientIndex}@placeholder.local`,
-    name: `Signer ${recipientIndex}`,
+    email: getPlaceholderRecipientEmail(recipientIndex),
+    name: getPlaceholderRecipientName(recipientIndex),
     recipientIndex,
   };
 };

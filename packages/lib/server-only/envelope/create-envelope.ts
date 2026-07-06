@@ -1,7 +1,11 @@
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import type { PlaceholderInfo } from '@documenso/lib/server-only/pdf/auto-place-fields';
 import { convertPlaceholdersToFieldInputs } from '@documenso/lib/server-only/pdf/auto-place-fields';
-import { findRecipientByPlaceholder } from '@documenso/lib/server-only/pdf/helpers';
+import {
+  findRecipientByPlaceholder,
+  getPlaceholderRecipientEmail,
+  getPlaceholderRecipientName,
+} from '@documenso/lib/server-only/pdf/helpers';
 import { normalizePdf as makeNormalizedPdf } from '@documenso/lib/server-only/pdf/normalize-pdf';
 import { ZDefaultRecipientsSchema } from '@documenso/lib/types/default-recipients';
 import { DOCUMENT_AUDIT_LOG_TYPE } from '@documenso/lib/types/document-audit-logs';
@@ -500,7 +504,7 @@ export const createEnvelope = async ({
           const index = Number(match[1]);
 
           if (!uniqueRecipientRefs.has(index)) {
-            uniqueRecipientRefs.set(index, `Recipient ${index}`);
+            uniqueRecipientRefs.set(index, getPlaceholderRecipientName(index));
           }
         }
       }
@@ -520,7 +524,7 @@ export const createEnvelope = async ({
 
         const placeholderRecipients = Array.from(uniqueRecipientRefs.entries(), ([recipientIndex, name]) => ({
           envelopeId: envelope.id,
-          email: `recipient.${recipientIndex}@documenso.com`,
+          email: getPlaceholderRecipientEmail(recipientIndex),
           name,
           role: RecipientRole.SIGNER,
           signingOrder: recipientIndex,

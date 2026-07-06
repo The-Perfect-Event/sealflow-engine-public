@@ -9,6 +9,20 @@ versioning is our own `v1.x.y` line (not upstream Documenso's).
 
 Deploy procedure: [`sealflow/docs/operations-runbook.md`](https://github.com/The-Perfect-Event/sealflow) → "Deploy a sealflow-engine version bump".
 
+## [v1.2.1] — 2026-07-06
+
+Hotfix for a regression introduced in v1.2.0.
+
+### Fixed
+- **Tagged-document upload failed with "Could not find recipient ID"** — the
+  v1.2.0 placeholder-recipient rename (`signerN@placeholder.local`) updated the
+  recipient *lookup* but not the auto-*creation* site, so uploading an
+  Adobe-tagged PDF **without** pre-specified recipients (the dashboard path)
+  threw `INVALID_BODY` on `envelope.create`. Both sides now derive the
+  placeholder email/name from a single shared helper
+  (`getPlaceholderRecipientEmail` / `getPlaceholderRecipientName`) so they can't
+  drift again; added a regression test that reproduces the `r2 → signer2` case.
+
 ## [v1.2.0] — 2026-07-06
 
 Tagged-document + certificate polish and email white-labeling, from an end-to-end
@@ -70,5 +84,6 @@ Initial owned hard fork + production cutover (sealflow#13).
 ### Fixed
 - Branding/logo and disclosure-mirror CI refspec fixes (v1.0.1–v1.0.3).
 
+[v1.2.1]: https://github.com/The-Perfect-Event/sealflow-engine/releases/tag/v1.2.1
 [v1.2.0]: https://github.com/The-Perfect-Event/sealflow-engine/releases/tag/v1.2.0
 [v1.1.0]: https://github.com/The-Perfect-Event/sealflow-engine/releases/tag/v1.1.0
