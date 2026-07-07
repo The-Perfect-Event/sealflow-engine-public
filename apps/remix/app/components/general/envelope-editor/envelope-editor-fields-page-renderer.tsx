@@ -6,7 +6,7 @@ import {
   type PageRenderData,
   useCurrentEnvelopeRender,
 } from '@documenso/lib/client-only/providers/envelope-render-provider';
-import { FIELD_META_DEFAULT_VALUES } from '@documenso/lib/types/field-meta';
+import { FIELD_META_DEFAULT_VALUES, type TFieldMetaSchema } from '@documenso/lib/types/field-meta';
 import {
   convertPixelToPercentage,
   MIN_FIELD_HEIGHT_PX,
@@ -31,7 +31,7 @@ import type { FieldType } from '@prisma/client';
 import Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { Transformer } from 'konva/lib/shapes/Transformer';
-import { CopyPlusIcon, ShapesIcon, SquareStackIcon, TrashIcon, UserCircleIcon } from 'lucide-react';
+import { AsteriskIcon, CopyPlusIcon, ShapesIcon, SquareStackIcon, TrashIcon, UserCircleIcon } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { fieldButtonList } from './envelope-editor-fields-drag-drop';
@@ -794,9 +794,47 @@ const FieldActionButtons = ({
     return null;
   }, [editorFields.localFields, envelope.recipients, selectedFieldFormId]);
 
+  // Required/optional is the most-used per-field control, so surface it directly
+  // on the inline cluster (in addition to the settings panel). Reflects the
+  // selected field(s) and toggles them all.
+  const allSelectedRequired = useMemo(() => {
+    const fields = editorFields.localFields.filter((field) => selectedFieldFormId.includes(field.formId));
+
+    return (
+      fields.length > 0 && fields.every((field) => Boolean((field.fieldMeta as TFieldMetaSchema | undefined)?.required))
+    );
+  }, [editorFields.localFields, selectedFieldFormId]);
+
+  const handleToggleRequired = () => {
+    const fields = editorFields.localFields.filter((field) => selectedFieldFormId.includes(field.formId));
+    const nextRequired = !fields.every((field) => Boolean((field.fieldMeta as TFieldMetaSchema | undefined)?.required));
+
+    for (const field of fields) {
+      editorFields.updateFieldByFormId(field.formId, {
+        fieldMeta: {
+          ...(field.fieldMeta ?? FIELD_META_DEFAULT_VALUES[field.type]),
+          required: nextRequired,
+        } as TFieldMetaSchema,
+      });
+    }
+  };
+
   return (
     <div className="flex flex-col items-center" {...props}>
       <div className="group flex w-fit items-center justify-evenly gap-x-1 rounded-md border bg-gray-900 p-0.5">
+        <button
+          type="button"
+          title={allSelectedRequired ? t`Required — click to make optional` : t`Optional — click to make required`}
+          aria-pressed={allSelectedRequired}
+          className={`rounded-sm p-1.5 transition-colors hover:bg-white/10 ${
+            allSelectedRequired ? 'text-red-400 hover:text-red-300' : 'text-gray-400 hover:text-gray-100'
+          }`}
+          onClick={handleToggleRequired}
+          onTouchEnd={handleToggleRequired}
+        >
+          <AsteriskIcon className="h-3 w-3" />
+        </button>
+
         <button
           type="button"
           title={t`Change Recipient`}

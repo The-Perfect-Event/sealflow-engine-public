@@ -3,7 +3,12 @@ import { z } from 'zod';
 
 import { DEFAULT_SIGNATURE_TEXT_FONT_SIZE } from '../constants/pdf';
 
-export const FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN = 'middle';
+// Fields default to BOTTOM vertical alignment so field content sits on the
+// document's printed lines (signature lines, blanks) rather than floating in the
+// middle of the box — per Dan's review (project-management#101 AC#2). Applies to
+// both the editor preview and the sealed PDF (this is the shared universal
+// renderer default); a per-field `verticalAlign` still overrides it.
+export const FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN = 'bottom';
 export const FIELD_DEFAULT_GENERIC_ALIGN = 'left';
 export const FIELD_DEFAULT_LINE_HEIGHT = 1;
 export const FIELD_DEFAULT_LETTER_SPACING = 0;
