@@ -24,7 +24,9 @@ import { AnimateGenericFadeInOut } from '@documenso/ui/components/animate/animat
 import { cn } from '@documenso/ui/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@documenso/ui/primitives/alert';
 import { Button } from '@documenso/ui/primitives/button';
+import { Label } from '@documenso/ui/primitives/label';
 import { Separator } from '@documenso/ui/primitives/separator';
+import { Switch } from '@documenso/ui/primitives/switch';
 import type { MessageDescriptor } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
@@ -443,6 +445,26 @@ export const EnvelopeEditorFieldsPage = () => {
 
                 <div className="px-4 [&_label]:text-foreground/70 [&_label]:text-xs">
                   <h3 className="font-semibold text-sm">{_(FieldSettingsTypeTranslations[selectedField.type])}</h3>
+
+                  {/* Required/optional applies to every field type, so surface it at the
+                      top of the settings panel as the most-used, one-click control. */}
+                  <div className="mt-3 mb-1 flex items-center justify-between">
+                    <Label htmlFor="field-required-toggle" className="cursor-pointer">
+                      <Trans>Required field</Trans>
+                    </Label>
+                    <Switch
+                      id="field-required-toggle"
+                      checked={Boolean((selectedField.fieldMeta as TFieldMetaSchema | undefined)?.required)}
+                      onCheckedChange={(checked) =>
+                        updateSelectedFieldMeta({
+                          ...(selectedField.fieldMeta ?? FIELD_META_DEFAULT_VALUES[selectedField.type]),
+                          required: checked,
+                        } as TFieldMetaSchema)
+                      }
+                    />
+                  </div>
+
+                  <Separator className="my-3" />
 
                   {match(selectedField.type)
                     .with(FieldType.SIGNATURE, () => (
