@@ -125,7 +125,7 @@ export const AppNavMobile = ({ isMenuOpen, onMenuOpenChange }: AppNavMobileProps
             >
               <Trans>Source code</Trans>
             </a>
-            <br />© {new Date().getFullYear()} Documenso, Inc.
+            <br />© {new Date().getFullYear()} Sealflow
           </p>
         </div>
       </SheetContent>

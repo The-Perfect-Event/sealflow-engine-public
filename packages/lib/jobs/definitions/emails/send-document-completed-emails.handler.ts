@@ -10,6 +10,7 @@ import { getEmailContext } from '../../../server-only/email/get-email-context';
 import { assertOrganisationRatesAndLimits } from '../../../server-only/rate-limit/assert-organisation-rates-and-limits';
 import { DOCUMENT_AUDIT_LOG_TYPE } from '../../../types/document-audit-logs';
 import { extractDerivedDocumentEmailSettings } from '../../../types/document-email';
+import { stripPdfExtension } from '../../../universal/strip-pdf-extension';
 import { getFileServerSide } from '../../../universal/upload/get-file.server';
 import { createDocumentAuditLogData } from '../../../utils/document-audit-logs';
 import { unsafeBuildEnvelopeIdQuery } from '../../../utils/envelope';
@@ -88,10 +89,15 @@ export const run = async ({ payload, io }: { payload: TSendDocumentCompletedEmai
       const file = await getFileServerSide(envelopeItem.documentData);
 
       // Use the envelope title for version 1, and the envelope item title for version 2.
-      const fileNameToUse = envelope.internalVersion === 1 ? envelope.title : envelopeItem.title + '.pdf';
+      const fileNameToUse = envelope.internalVersion === 1 ? envelope.title : envelopeItem.title;
+
+      // Mark the emailed copy as the final, fully-signed contract. Strip any
+      // stored extension first (v1 titles may still carry `.pdf`; v2 titles are
+      // already extension-less) so we never double the suffix or the extension.
+      const completedFileName = `${stripPdfExtension(fileNameToUse)} - Fully Executed.pdf`;
 
       return {
-        filename: fileNameToUse.endsWith('.pdf') ? fileNameToUse : fileNameToUse + '.pdf',
+        filename: completedFileName,
         content: Buffer.from(file),
         contentType: 'application/pdf',
       };

@@ -191,7 +191,10 @@ export const EnvelopeSignerPageRenderer = ({ pageData }: { pageData: PageRenderD
       }
 
       let localEmail: string | null = email.current;
-      let localFullName: string | null = fullName.current;
+      // Name field = the recipient's "printed name": use the sender-assigned
+      // recipient name (full), not the signer's account display name (which may
+      // be only a first name). Assistant mode overrides this below.
+      let localFullName: string | null = recipient.name || fullName.current;
       let placeholderEmail: string | null = null;
 
       if (recipient.role === RecipientRole.ASSISTANT) {

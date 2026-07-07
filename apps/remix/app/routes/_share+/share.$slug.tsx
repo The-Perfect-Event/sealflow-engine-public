@@ -31,10 +31,6 @@ export function meta({ params: { slug } }: Route.MetaArgs) {
       content: `${NEXT_PUBLIC_WEBAPP_URL()}/share/${slug}/opengraph`,
     },
     {
-      name: 'twitter:site',
-      content: '@documenso',
-    },
-    {
       name: 'twitter:card',
       content: 'summary_large_image',
     },
@@ -69,8 +65,8 @@ export const loader = async ({ request, params: { slug } }: Route.LoaderArgs) =>
     return {};
   }
 
-  // Is hardcoded because this whole meta is hardcoded anyway for Sealflow.
-  throw redirect('https://documenso.com');
+  // Non-preview visitors are sent to the app itself (never an external vendor site).
+  throw redirect(NEXT_PUBLIC_WEBAPP_URL() || '/');
 };
 
 export default function SharePage() {

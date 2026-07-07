@@ -61,6 +61,13 @@ export const DocumentSigningNameField = ({ field, onSignField, onUnsignField }: 
   const [localFullName, setLocalFullName] = useState('');
 
   const onPreSign = () => {
+    // The Name field is the recipient's "printed name" — use the full name the
+    // sender assigned to this recipient. Only fall back to prompting when the
+    // recipient has no name on the document.
+    if (recipient.name) {
+      return true;
+    }
+
     if (!providedFullName && !isAssistantMode) {
       setShowFullNameModal(true);
       return false;
@@ -84,7 +91,9 @@ export const DocumentSigningNameField = ({ field, onSignField, onUnsignField }: 
 
   const onSign = async (authOptions?: TRecipientActionAuth, name?: string) => {
     try {
-      const value = name || providedFullName || '';
+      // Prefer the sender-assigned recipient name (full "printed name") over the
+      // signer's account display name, which may only be a first name.
+      const value = name || recipient.name || providedFullName || '';
 
       if (!value && !isAssistantMode) {
         setShowFullNameModal(true);

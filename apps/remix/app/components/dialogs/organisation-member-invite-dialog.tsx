@@ -245,7 +245,7 @@ export const OrganisationMemberInviteDialog = ({ trigger, ...props }: Organisati
     });
 
     downloadFile({
-      filename: 'documenso-organisation-member-invites-template.csv',
+      filename: 'sealflow-organisation-member-invites-template.csv',
       data: blob,
     });
   };

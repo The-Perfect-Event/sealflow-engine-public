@@ -40,7 +40,9 @@ export const SignFieldTextDialog = createCallable<SignFieldTextDialogProps, stri
 
   return (
     <Dialog open={true} onOpenChange={(value) => (!value ? call.end(null) : null)}>
-      <DialogContent>
+      {/* Dock to the bottom and keep the document visible (no white-out/blur) so
+          the signer never loses sight of which field they're filling in. */}
+      <DialogContent position="end" overlayClassName="bg-transparent backdrop-blur-none">
         <DialogHeader>
           <DialogTitle>{fieldMeta?.label || <Trans>Enter Text</Trans>}</DialogTitle>
 

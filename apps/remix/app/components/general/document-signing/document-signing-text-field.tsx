@@ -240,7 +240,9 @@ export const DocumentSigningTextField = ({ field, onSignField, onUnsignField }: 
       )}
 
       <Dialog open={showCustomTextModal} onOpenChange={setShowCustomTextModal}>
-        <DialogContent>
+        {/* Dock to the bottom and keep the document visible (no white-out/blur) so
+            the signer never loses sight of which field they're filling in. */}
+        <DialogContent position="end" overlayClassName="bg-transparent backdrop-blur-none">
           <DialogTitle>{parsedFieldMeta?.label ? parsedFieldMeta?.label : <Trans>Text</Trans>}</DialogTitle>
 
           <div>
