@@ -9,6 +9,7 @@ import {
 } from '@documenso/lib/types/field-meta';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@documenso/ui/primitives/form/form';
 import { Input } from '@documenso/ui/primitives/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@documenso/ui/primitives/select';
 import { Textarea } from '@documenso/ui/primitives/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Trans, useLingui } from '@lingui/react/macro';
@@ -31,6 +32,7 @@ const ZTextFieldFormSchema = ZTextFieldMeta.pick({
   placeholder: true,
   text: true,
   characterLimit: true,
+  validationRule: true,
   fontSize: true,
   textAlign: true,
   lineHeight: true,
@@ -72,6 +74,7 @@ export const EditorFieldTextForm = ({
       placeholder: value.placeholder || '',
       text: value.text || '',
       characterLimit: value.characterLimit || 0,
+      validationRule: value.validationRule ?? 'none',
       fontSize: value.fontSize || DEFAULT_FIELD_FONT_SIZE,
       textAlign: value.textAlign ?? FIELD_DEFAULT_GENERIC_ALIGN,
       lineHeight: value.lineHeight ?? FIELD_DEFAULT_LINE_HEIGHT,
@@ -210,6 +213,37 @@ export const EditorFieldTextForm = ({
                       }
                     }}
                   />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="validationRule"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  <Trans>Validate signer input as</Trans>
+                </FormLabel>
+                <FormControl>
+                  <Select value={field.value ?? 'none'} onValueChange={field.onChange}>
+                    <SelectTrigger className="bg-background" data-testid="field-form-validationRule">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">
+                        <Trans>No validation (any text)</Trans>
+                      </SelectItem>
+                      <SelectItem value="email">
+                        <Trans>Email address</Trans>
+                      </SelectItem>
+                      <SelectItem value="date">
+                        <Trans>Date (MM/DD/YYYY)</Trans>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </FormControl>
                 <FormMessage />
               </FormItem>

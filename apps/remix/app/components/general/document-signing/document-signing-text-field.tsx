@@ -1,4 +1,5 @@
 import { validateTextField } from '@documenso/lib/advanced-fields-validation/validate-text';
+import { isTextFieldValueValid } from '@documenso/lib/advanced-fields-validation/validate-text-field-rule';
 import { DO_NOT_INVALIDATE_QUERY_ON_MUTATION } from '@documenso/lib/constants/trpc';
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import type { TRecipientActionAuth } from '@documenso/lib/types/document-auth';
@@ -58,6 +59,9 @@ export const DocumentSigningTextField = ({ field, onSignField, onUnsignField }: 
     characterLimit: [],
   };
   const [errors, setErrors] = useState(initialErrors);
+  // Separate from `errors` (a shared type) to avoid rippling that type: holds the
+  // optional format-rule error (email/date) for a validated Text field.
+  const [ruleError, setRuleError] = useState<string | null>(null);
   const userInputHasErrors = Object.values(errors).some((error) => error.length > 0);
 
   const { executeActionAuthProcedure } = useRequiredDocumentSigningAuthContext();
@@ -71,6 +75,22 @@ export const DocumentSigningTextField = ({ field, onSignField, onUnsignField }: 
   const safeFieldMeta = ZTextFieldMeta.safeParse(field.fieldMeta);
   const parsedFieldMeta = safeFieldMeta.success ? safeFieldMeta.data : null;
 
+  const validationRule = parsedFieldMeta?.validationRule;
+  const ruleErrorMessage =
+    validationRule === 'email'
+      ? _(msg`Please enter a valid email address`)
+      : _(msg`Please enter a valid date (MM/DD/YYYY)`);
+
+  const checkValidationRule = (text: string): boolean => {
+    if (text.length > 0 && !isTextFieldValueValid(text, validationRule)) {
+      setRuleError(ruleErrorMessage);
+      return false;
+    }
+
+    setRuleError(null);
+    return true;
+  };
+
   const isLoading = isSignFieldWithTokenLoading || isRemoveSignedFieldWithTokenLoading;
   const shouldAutoSignField =
     (!field.inserted && parsedFieldMeta?.text) ||
@@ -83,6 +103,7 @@ export const DocumentSigningTextField = ({ field, onSignField, onUnsignField }: 
     if (!showCustomTextModal) {
       setLocalCustomText(parsedFieldMeta?.text ?? '');
       setErrors(initialErrors);
+      setRuleError(null);
     }
   }, [showCustomTextModal]);
 
@@ -97,6 +118,8 @@ export const DocumentSigningTextField = ({ field, onSignField, onUnsignField }: 
         characterLimit: validationErrors.filter((error) => error.includes('character limit')),
       });
     }
+
+    checkValidationRule(text);
   };
 
   /**
@@ -113,6 +136,11 @@ export const DocumentSigningTextField = ({ field, onSignField, onUnsignField }: 
         });
         return;
       }
+    }
+
+    // Block submit if the signer's value doesn't match the field's format rule.
+    if (!checkValidationRule(localText)) {
+      return;
     }
 
     setShowCustomTextModal(false);
@@ -271,6 +299,8 @@ export const DocumentSigningTextField = ({ field, onSignField, onUnsignField }: 
                 />
               </div>
             )}
+
+          {ruleError && <p className="text-red-500 text-sm">{ruleError}</p>}
 
           {userInputHasErrors && (
             <div className="text-sm">

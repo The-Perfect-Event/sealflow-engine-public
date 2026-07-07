@@ -115,10 +115,18 @@ export const ZDateFieldMeta = ZBaseFieldMeta.extend({
 
 export type TDateFieldMeta = z.infer<typeof ZDateFieldMeta>;
 
+// Optional format the signer's typed value must match. `none` (default) keeps the
+// Text field's accept-anything behaviour; `email`/`date` make it a validated
+// signer-input field (Dan's review, project-management#101 AC#5 — "validates
+// format vs 'Text' does not").
+export const ZTextFieldValidationRule = z.enum(['none', 'email', 'date']);
+export type TTextFieldValidationRule = z.infer<typeof ZTextFieldValidationRule>;
+
 export const ZTextFieldMeta = ZBaseFieldMeta.extend({
   type: z.literal('text'),
   text: z.string().optional(),
   characterLimit: z.coerce.number({ invalid_type_error: 'Value must be a number' }).min(0).optional(),
+  validationRule: ZTextFieldValidationRule.optional(),
   textAlign: ZFieldTextAlignSchema.optional(),
   lineHeight: ZFieldMetaLineHeight.nullish(),
   letterSpacing: ZFieldMetaLetterSpacing.nullish(),

@@ -1,3 +1,4 @@
+import { isTextFieldValueValid } from '@documenso/lib/advanced-fields-validation/validate-text-field-rule';
 import type { TTextFieldMeta } from '@documenso/lib/types/field-meta';
 import { cn } from '@documenso/ui/lib/utils';
 import { Button } from '@documenso/ui/primitives/button';
@@ -14,15 +15,14 @@ import { Textarea } from '@documenso/ui/primitives/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { msg } from '@lingui/core/macro';
 import { Plural, Trans, useLingui } from '@lingui/react/macro';
+import { useMemo } from 'react';
 import { createCallable } from 'react-call';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-const ZSignFieldTextFormSchema = z.object({
-  text: z.string().min(1, { message: msg`Text is required`.id }),
-});
-
-type TSignFieldTextFormSchema = z.infer<typeof ZSignFieldTextFormSchema>;
+type TSignFieldTextFormSchema = {
+  text: string;
+};
 
 export type SignFieldTextDialogProps = {
   fieldMeta?: TTextFieldMeta;
@@ -31,8 +31,28 @@ export type SignFieldTextDialogProps = {
 export const SignFieldTextDialog = createCallable<SignFieldTextDialogProps, string | null>(({ call, fieldMeta }) => {
   const { t } = useLingui();
 
+  const validationRule = fieldMeta?.validationRule;
+
+  // Enforce the field's optional format rule (email/date) on the signer's input;
+  // a plain Text field (no rule) just requires a non-empty value.
+  const formSchema = useMemo(
+    () =>
+      z.object({
+        text: z
+          .string()
+          .min(1, { message: msg`Text is required`.id })
+          .refine((value) => isTextFieldValueValid(value, validationRule), {
+            message:
+              validationRule === 'email'
+                ? msg`Please enter a valid email address`.id
+                : msg`Please enter a valid date (MM/DD/YYYY)`.id,
+          }),
+      }),
+    [validationRule],
+  );
+
   const form = useForm<TSignFieldTextFormSchema>({
-    resolver: zodResolver(ZSignFieldTextFormSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: {
       text: '',
     },

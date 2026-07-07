@@ -9,6 +9,20 @@ versioning is our own `v1.x.y` line (not upstream Documenso's).
 
 Deploy procedure: [`sealflow/docs/operations-runbook.md`](https://github.com/The-Perfect-Event/sealflow) → "Deploy a sealflow-engine version bump".
 
+## [v1.2.5] — 2026-07-07
+
+Final item of Dan's round-2 feedback (project-management#101 AC#5) — completes
+the ticket. Bundles the v1.2.4 editor controls (inline required toggle,
+bottom-align default) so everything ships in one deploy.
+
+### Added
+- **Validated signer-input Text fields.** A Text field can now be set to
+  **Validate signer input as → Email or Date** in its settings. When set, the
+  signer must type a value and it's format-checked before they can submit
+  (a plain Text field with no rule still accepts anything — "validates format vs
+  'Text' does not"). Opt-in via `validationRule` meta; enforced on both V1 and
+  V2 signing paths; shared pure validator (`isTextFieldValueValid`) with tests.
+
 ## [v1.2.4] — 2026-07-07
 
 More of Dan's round-2 feedback (project-management#101). Editor field controls.
@@ -152,6 +166,7 @@ Initial owned hard fork + production cutover (sealflow#13).
 ### Fixed
 - Branding/logo and disclosure-mirror CI refspec fixes (v1.0.1–v1.0.3).
 
+[v1.2.5]: https://github.com/The-Perfect-Event/sealflow-engine/releases/tag/v1.2.5
 [v1.2.4]: https://github.com/The-Perfect-Event/sealflow-engine/releases/tag/v1.2.4
 [v1.2.3]: https://github.com/The-Perfect-Event/sealflow-engine/releases/tag/v1.2.3
 [v1.2.2]: https://github.com/The-Perfect-Event/sealflow-engine/releases/tag/v1.2.2
