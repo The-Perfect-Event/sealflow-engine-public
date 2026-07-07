@@ -9,6 +9,35 @@ versioning is our own `v1.x.y` line (not upstream Documenso's).
 
 Deploy procedure: [`sealflow/docs/operations-runbook.md`](https://github.com/The-Perfect-Event/sealflow) → "Deploy a sealflow-engine version bump".
 
+## [v1.2.3] — 2026-07-07
+
+Dan's round-2 E2E feedback (project-management#101). This release lands the
+non-canvas items; the Konva-editor items (inline required toggle, default
+bottom-alignment) and signer-typed/validated Date & Email fields follow after
+in-browser verification.
+
+### Added
+- **Required/optional toggle** in the field-settings panel — a one-click switch
+  above every field type's settings (AC#1, settings-panel half).
+- **"Fully Executed" completion file** — the signed PDF emailed on completion is
+  named `<title> - Fully Executed.pdf` (AC#8).
+
+### Fixed
+- **Printed Name shows the full name** — the Name field now prints the
+  sender-assigned recipient name instead of the signer's account display name
+  (which could be first-name only). V1 + V2 signing (AC#4).
+- **Signer text-entry popup no longer hides the document** — it docks to the
+  bottom with a transparent overlay, so signers keep sight of the field they're
+  filling. V1 + V2 (AC#6).
+
+### Changed
+- **US date format** — new documents default to `MM/DD/YYYY` (set per-org for
+  TPE + ATS) (AC#3).
+- **Residual Documenso references removed** from user-facing, non-email surfaces:
+  signer "Powered by" de-linked, social handle dropped, mobile-footer copyright
+  → Sealflow, `security.txt`, download filenames, `/share` redirect, and the
+  support email is now env-driven (AC#7).
+
 ## [v1.2.2] — 2026-07-06
 
 Signer-experience white-label completion and a filename fix, from a review of the
@@ -106,6 +135,7 @@ Initial owned hard fork + production cutover (sealflow#13).
 ### Fixed
 - Branding/logo and disclosure-mirror CI refspec fixes (v1.0.1–v1.0.3).
 
+[v1.2.3]: https://github.com/The-Perfect-Event/sealflow-engine/releases/tag/v1.2.3
 [v1.2.2]: https://github.com/The-Perfect-Event/sealflow-engine/releases/tag/v1.2.2
 [v1.2.1]: https://github.com/The-Perfect-Event/sealflow-engine/releases/tag/v1.2.1
 [v1.2.0]: https://github.com/The-Perfect-Event/sealflow-engine/releases/tag/v1.2.0
