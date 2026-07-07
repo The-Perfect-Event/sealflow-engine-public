@@ -9,6 +9,23 @@ versioning is our own `v1.x.y` line (not upstream Documenso's).
 
 Deploy procedure: [`sealflow/docs/operations-runbook.md`](https://github.com/The-Perfect-Event/sealflow) → "Deploy a sealflow-engine version bump".
 
+## [v1.2.4] — 2026-07-07
+
+More of Dan's round-2 feedback (project-management#101). Editor field controls.
+The last item — signer-typed/validated Date & Email fields — is a standalone
+feature landing separately after signer-flow verification.
+
+### Added
+- **Inline required/optional toggle** — an asterisk toggle on the on-field button
+  cluster (in addition to the settings-panel toggle from v1.2.3); reflects and
+  flips the selected field(s) (AC#1, inline half — completes AC#1).
+
+### Changed
+- **Fields default to bottom alignment** — field content now bottom-aligns by
+  default (was middle) so it sits on the document's printed lines; applied via
+  the shared universal renderer, so it's consistent in the editor and the sealed
+  PDF. Per-field `verticalAlign` still overrides (AC#2).
+
 ## [v1.2.3] — 2026-07-07
 
 Dan's round-2 E2E feedback (project-management#101). This release lands the
@@ -135,6 +152,7 @@ Initial owned hard fork + production cutover (sealflow#13).
 ### Fixed
 - Branding/logo and disclosure-mirror CI refspec fixes (v1.0.1–v1.0.3).
 
+[v1.2.4]: https://github.com/The-Perfect-Event/sealflow-engine/releases/tag/v1.2.4
 [v1.2.3]: https://github.com/The-Perfect-Event/sealflow-engine/releases/tag/v1.2.3
 [v1.2.2]: https://github.com/The-Perfect-Event/sealflow-engine/releases/tag/v1.2.2
 [v1.2.1]: https://github.com/The-Perfect-Event/sealflow-engine/releases/tag/v1.2.1
