@@ -2,8 +2,12 @@ import { type Field, FieldType } from '@prisma/client';
 
 import { ZFieldMetaSchema } from '../types/field-meta';
 
-// Currently it seems that the majority of fields have advanced fields for font reasons.
-// This array should only contain fields that have an optional setting in the fieldMeta.
+// Field types whose required flag historically DEFAULTS to optional when the
+// fieldMeta `required` is unset. Other types default to required (notably
+// signatures/initials, which must be completed unless deliberately made
+// optional). Since SealFlow added `required` to the shared field meta and ships
+// a required toggle for every type, `isRequiredField` now honors an explicit
+// toggle for all types and only falls back to this default when it's unset.
 export const ADVANCED_FIELD_TYPES_WITH_OPTIONAL_SETTING: FieldType[] = [
   FieldType.NUMBER,
   FieldType.TEXT,
@@ -14,28 +18,31 @@ export const ADVANCED_FIELD_TYPES_WITH_OPTIONAL_SETTING: FieldType[] = [
 
 /**
  * Whether a field is required to be inserted.
+ *
+ * Honors an explicit `fieldMeta.required` for EVERY field type. When it's unset
+ * (or the meta is missing/unparseable), falls back to the type's historical
+ * default so existing and auto-placed fields keep their prior behavior — data
+ * fields (text/number/…) default optional, everything else defaults required.
  */
 export const isRequiredField = (field: Field) => {
-  // All fields without the optional metadata are assumed to be required.
-  if (!ADVANCED_FIELD_TYPES_WITH_OPTIONAL_SETTING.includes(field.type)) {
-    return true;
-  }
+  const defaultRequired = !ADVANCED_FIELD_TYPES_WITH_OPTIONAL_SETTING.includes(field.type);
 
-  // Not sure why fieldMeta can be optional for advanced fields, but it is.
-  // Therefore we must assume if there is no fieldMeta, then the field is optional.
   if (!field.fieldMeta) {
-    return false;
+    return defaultRequired;
   }
 
   const parsedData = ZFieldMetaSchema.safeParse(field.fieldMeta);
 
-  // If it fails, assume the field is optional.
-  // This needs to be logged somewhere.
+  // If it fails, fall back to the type's default (kept as-is; should be logged).
   if (!parsedData.success) {
-    return false;
+    return defaultRequired;
   }
 
-  return parsedData.data?.required === true;
+  if (typeof parsedData.data?.required === 'boolean') {
+    return parsedData.data.required;
+  }
+
+  return defaultRequired;
 };
 
 /**

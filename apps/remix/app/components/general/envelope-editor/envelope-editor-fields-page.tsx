@@ -149,11 +149,23 @@ export const EnvelopeEditorFieldsPage = () => {
       return;
     }
 
-    const isMetaSame = isDeepEqual(selectedField.fieldMeta, fieldMeta);
+    // The required toggle is managed generically (the settings-panel Switch and
+    // the inline asterisk both write `fieldMeta.required`), but several per-type
+    // forms (date/email/name/initials/signature) don't carry `required` in their
+    // schema and re-emit meta without it on every change — which fires on mount,
+    // i.e. when navigating back to a field — silently stripping the toggle.
+    // Preserve the existing `required` unless the incoming meta explicitly sets
+    // it, so the toggle survives navigate-away for every field type.
+    const previousRequired = (selectedField.fieldMeta as TFieldMetaSchema | undefined)?.required;
+    const mergedFieldMeta: TFieldMetaSchema = fieldMeta
+      ? ({ ...fieldMeta, required: fieldMeta.required ?? previousRequired } as TFieldMetaSchema)
+      : fieldMeta;
+
+    const isMetaSame = isDeepEqual(selectedField.fieldMeta, mergedFieldMeta);
 
     if (!isMetaSame) {
       editorFields.updateFieldByFormId(selectedField.formId, {
-        fieldMeta,
+        fieldMeta: mergedFieldMeta,
       });
     }
   };
