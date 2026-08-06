@@ -9,6 +9,19 @@ versioning is our own `v1.x.y` line (not upstream Documenso's).
 
 Deploy procedure: [`sealflow/docs/operations-runbook.md`](https://github.com/The-Perfect-Event/sealflow) → "Deploy a sealflow-engine version bump".
 
+## [v1.2.6] — 2026-08-06
+
+project-management#7 — monitoring/alerting groundwork ahead of the Adobe→SealFlow cutover.
+
+### Added
+- **`/api/health` is now pure liveness** — no dependency calls, just confirms the
+  process is up. Existing DB + certificate checks moved to a new endpoint.
+- **`/api/health/deep`** — readiness check for PostgreSQL, Redis, and the signing
+  certificate. Intended for synthetic monitoring (CloudWatch canary) and load
+  balancer health checks, not for high-frequency polling. No Chromium check:
+  certificate/audit-log PDF generation are both `@deprecated` in favour of Konva
+  rendering, so nothing in the live request path launches a browser anymore.
+
 ## [v1.2.5] — 2026-07-07
 
 Final item of Dan's round-2 feedback (project-management#101 AC#5) — completes

@@ -1,49 +1,12 @@
-import { getCertificateStatus } from '@documenso/lib/server-only/cert/cert-status';
-import { prisma } from '@documenso/prisma';
-
-type CheckStatus = 'ok' | 'warning' | 'error';
-
-export const loader = async () => {
-  const checks: {
-    database: { status: CheckStatus };
-    certificate: { status: CheckStatus };
-  } = {
-    database: { status: 'ok' },
-    certificate: { status: 'ok' },
-  };
-
-  let overallStatus: CheckStatus = 'ok';
-
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-  } catch {
-    checks.database = { status: 'error' };
-    overallStatus = 'error';
-  }
-
-  try {
-    const certStatus = getCertificateStatus();
-
-    if (certStatus.isAvailable) {
-      checks.certificate = { status: 'ok' };
-    } else {
-      checks.certificate = { status: 'warning' };
-
-      if (overallStatus === 'ok') {
-        overallStatus = 'warning';
-      }
-    }
-  } catch {
-    checks.certificate = { status: 'error' };
-    overallStatus = 'error';
-  }
-
-  return Response.json(
-    {
-      status: overallStatus,
-      timestamp: new Date().toISOString(),
-      checks,
-    },
-    { status: overallStatus === 'error' ? 500 : 200 },
-  );
+/**
+ * Liveness check — process is up and serving requests. No dependency calls
+ * (DB/Redis/etc.) on purpose: this is what the load balancer / orchestrator
+ * should poll to decide whether to route traffic to this instance at all.
+ * For an actual readiness check (DB + Redis reachable), see /api/health/deep.
+ */
+export const loader = () => {
+  return Response.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+  });
 };
