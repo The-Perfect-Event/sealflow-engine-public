@@ -41,7 +41,13 @@ export const TemplateDocumentInvite = ({
 
       <Section>
         <Text className="mx-auto mb-0 max-w-[80%] text-center font-semibold text-foreground text-lg">
-          {match({ selfSigner, organisationType, includeSenderDetails, teamName })
+          {match({ role, selfSigner, organisationType, includeSenderDetails, teamName })
+            .with({ role: RecipientRole.CC }, () => (
+              <Trans>
+                You have been copied on
+                <br />"{documentName}"
+              </Trans>
+            ))
             .with({ selfSigner: true }, () => (
               <Trans>
                 Please {_(actionVerb).toLowerCase()} your document
@@ -75,30 +81,36 @@ export const TemplateDocumentInvite = ({
             ))}
         </Text>
 
-        <Text className="my-1 text-center text-base text-muted-foreground">
-          {match(role)
-            .with(RecipientRole.SIGNER, () => <Trans>Continue by signing the document.</Trans>)
-            .with(RecipientRole.VIEWER, () => <Trans>Continue by viewing the document.</Trans>)
-            .with(RecipientRole.APPROVER, () => <Trans>Continue by approving the document.</Trans>)
-            .with(RecipientRole.CC, () => '')
-            .with(RecipientRole.ASSISTANT, () => <Trans>Continue by assisting with the document.</Trans>)
-            .exhaustive()}
-        </Text>
+        {/* CC recipients have no action to take, so we omit the "continue by…"
+            line and the CTA button entirely (rendering them empty leaves a
+            dangling blank button). The custom body explains they'll receive the
+            final signed copy on completion. */}
+        {role !== RecipientRole.CC && (
+          <>
+            <Text className="my-1 text-center text-base text-muted-foreground">
+              {match(role)
+                .with(RecipientRole.SIGNER, () => <Trans>Continue by signing the document.</Trans>)
+                .with(RecipientRole.VIEWER, () => <Trans>Continue by viewing the document.</Trans>)
+                .with(RecipientRole.APPROVER, () => <Trans>Continue by approving the document.</Trans>)
+                .with(RecipientRole.ASSISTANT, () => <Trans>Continue by assisting with the document.</Trans>)
+                .otherwise(() => '')}
+            </Text>
 
-        <Section className="mt-8 mb-6 text-center">
-          <Button
-            className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-center font-medium text-primary-foreground text-sbase no-underline"
-            href={signDocumentLink}
-          >
-            {match(role)
-              .with(RecipientRole.SIGNER, () => <Trans>View Document to sign</Trans>)
-              .with(RecipientRole.VIEWER, () => <Trans>View Document</Trans>)
-              .with(RecipientRole.APPROVER, () => <Trans>View Document to approve</Trans>)
-              .with(RecipientRole.CC, () => '')
-              .with(RecipientRole.ASSISTANT, () => <Trans>View Document to assist</Trans>)
-              .exhaustive()}
-          </Button>
-        </Section>
+            <Section className="mt-8 mb-6 text-center">
+              <Button
+                className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-center font-medium text-primary-foreground text-sbase no-underline"
+                href={signDocumentLink}
+              >
+                {match(role)
+                  .with(RecipientRole.SIGNER, () => <Trans>View Document to sign</Trans>)
+                  .with(RecipientRole.VIEWER, () => <Trans>View Document</Trans>)
+                  .with(RecipientRole.APPROVER, () => <Trans>View Document to approve</Trans>)
+                  .with(RecipientRole.ASSISTANT, () => <Trans>View Document to assist</Trans>)
+                  .otherwise(() => '')}
+              </Button>
+            </Section>
+          </>
+        )}
       </Section>
     </>
   );

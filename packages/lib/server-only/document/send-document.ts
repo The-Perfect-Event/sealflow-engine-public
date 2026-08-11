@@ -359,6 +359,30 @@ export const sendDocument = async ({ id, userId, teamId, sendEmail, requestMetad
         });
       }),
     );
+
+    // Notify CC recipients (Adobe parity): the same job renders a branded
+    // "you've been copied" email (no signing link, no attachment). This is
+    // independent of the sequential signer notification above — CCs are told
+    // immediately, regardless of order. Gated on the initial send (status was
+    // DRAFT) so re-invocations never double-notify; CCs default to
+    // sendStatus=SENT, so that flag can't be used for idempotency here.
+    if (envelope.status === DocumentStatus.DRAFT) {
+      await Promise.all(
+        envelope.recipients
+          .filter((recipient) => recipient.role === RecipientRole.CC)
+          .map(async (recipient) => {
+            await jobs.triggerJob({
+              name: 'send.signing.requested.email',
+              payload: {
+                userId,
+                documentId: legacyDocumentId,
+                recipientId: recipient.id,
+                requestMetadata: requestMetadata?.requestMetadata,
+              },
+            });
+          }),
+      );
+    }
   }
 
   await triggerWebhook({

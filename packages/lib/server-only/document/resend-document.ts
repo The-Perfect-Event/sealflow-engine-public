@@ -213,8 +213,9 @@ export const resendDocument = async ({ id, userId, recipients, teamId, requestMe
 
       const recipientActionVerb = i18n._(RECIPIENT_ROLES_DESCRIPTION[recipient.role].actionVerb).toLowerCase();
 
+      // Adobe parity: "Reminder: Waiting for you to sign <title>".
       let emailMessage = envelope.documentMeta.message || '';
-      let emailSubject = i18n._(msg`Reminder: Please ${recipientActionVerb} this document`);
+      let emailSubject = i18n._(msg`Reminder: Waiting for you to ${recipientActionVerb} ${envelope.title}`);
 
       if (selfSigner) {
         emailMessage = i18n._(
@@ -224,7 +225,7 @@ export const resendDocument = async ({ id, userId, recipients, teamId, requestMe
       }
 
       if (organisationType === OrganisationType.ORGANISATION) {
-        emailSubject = i18n._(msg`Reminder: ${envelope.team.name} invited you to ${recipientActionVerb} a document`);
+        emailSubject = i18n._(msg`Reminder: Waiting for you to ${recipientActionVerb} ${envelope.title}`);
         emailMessage =
           envelope.documentMeta.message ||
           i18n._(

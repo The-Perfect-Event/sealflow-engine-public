@@ -91,9 +91,11 @@ export const run = async ({ payload, io }: { payload: TSendSigningEmailJobDefini
 
   const { documentMeta, team } = envelope;
 
-  if (recipient.role === RecipientRole.CC) {
-    return;
-  }
+  // CC recipients are notified here too (Adobe parity): the engine sends them a
+  // branded "you've been copied" email — same template as signers, but with no
+  // signing link/button, no PDF attachment, and no reminder scheduling. Their
+  // copy explains they'll receive the fully signed PDF on completion.
+  const isCc = recipient.role === RecipientRole.CC;
 
   const isRecipientSigningRequestEmailEnabled = extractDerivedDocumentEmailSettings(
     envelope.documentMeta,
@@ -131,7 +133,11 @@ export const run = async ({ payload, io }: { payload: TSendSigningEmailJobDefini
   const customEmail = envelope?.documentMeta;
   const isDirectTemplate = envelope.source === DocumentSource.TEMPLATE_DIRECT_LINK;
 
-  const recipientEmailType = RECIPIENT_ROLE_TO_EMAIL_TYPE[recipient.role];
+  // RECIPIENT_ROLE_TO_EMAIL_TYPE has no CC entry — writing `undefined` into the
+  // EMAIL_SENT audit row breaks the audit-log Zod parse for the whole envelope.
+  // The audit email-type enum has a dedicated 'CC' value; use it.
+  const recipientEmailType =
+    recipient.role === RecipientRole.CC ? ('CC' as const) : RECIPIENT_ROLE_TO_EMAIL_TYPE[recipient.role];
 
   const { email, name } = recipient;
   const selfSigner = email === user.email;
@@ -140,8 +146,11 @@ export const run = async ({ payload, io }: { payload: TSendSigningEmailJobDefini
 
   const recipientActionVerb = i18n._(RECIPIENT_ROLES_DESCRIPTION[recipient.role].actionVerb).toLowerCase();
 
+  // Adobe parity, recipient-facing: the signer sees "Signature requested on …".
+  // ("<title> has been sent out for signature to <name>" is Adobe's SENDER-side
+  // notification, not the signer's subject.)
   let emailMessage = customEmail?.message || '';
-  let emailSubject = i18n._(msg`${envelope.title} has been sent out for signature to ${name || email}`);
+  let emailSubject = i18n._(msg`Signature requested on "${envelope.title}"`);
 
   if (selfSigner) {
     emailMessage = i18n._(
@@ -158,7 +167,7 @@ export const run = async ({ payload, io }: { payload: TSendSigningEmailJobDefini
   }
 
   if (organisationType === OrganisationType.ORGANISATION) {
-    emailSubject = i18n._(msg`${envelope.title} has been sent out for signature to ${name || email}`);
+    emailSubject = i18n._(msg`Signature requested on "${envelope.title}"`);
     emailMessage = customEmail?.message ?? '';
 
     if (!emailMessage) {
@@ -170,6 +179,19 @@ export const run = async ({ payload, io }: { payload: TSendSigningEmailJobDefini
           : msg`${team.name} has sent you "${envelope.title}" to ${recipientActionVerb}. The document is attached for your reference. When all parties have completed it, everyone will receive the final signed PDF.`,
       );
     }
+  }
+
+  // CC copy takes precedence over every branch above: a CC has no action, so
+  // the subject and body must not talk about signing.
+  if (isCc) {
+    emailSubject = i18n._(msg`You have been copied on "${envelope.title}"`);
+
+    const inviterName = user.name || '';
+    emailMessage = i18n._(
+      settings.includeSenderDetails
+        ? msg`${inviterName} on behalf of "${team.name}" has added you as a CC on "${envelope.title}". No action is required from you — once all parties have completed signing, you'll automatically receive a copy of the fully signed document.`
+        : msg`${team.name} has added you as a CC on "${envelope.title}". No action is required from you — once all parties have completed signing, you'll automatically receive a copy of the fully signed document.`,
+    );
   }
 
   const customEmailTemplate = {
@@ -231,17 +253,21 @@ export const run = async ({ payload, io }: { payload: TSendSigningEmailJobDefini
 
       // Attach the (unsigned) document PDF to the signing request, matching
       // Adobe's behaviour so the recipient sees the contract in their inbox.
-      const attachments = await Promise.all(
-        envelope.envelopeItems.map(async (envelopeItem) => {
-          const file = await getFileServerSide(envelopeItem.documentData);
-          const fileName = envelope.internalVersion === 1 ? envelope.title : envelopeItem.title;
-          return {
-            filename: `${stripPdfExtension(fileName)}.pdf`,
-            content: Buffer.from(file),
-            contentType: 'application/pdf',
-          };
-        }),
-      );
+      // CC recipients get no attachment here — they receive the fully signed
+      // PDF on completion.
+      const attachments = isCc
+        ? []
+        : await Promise.all(
+            envelope.envelopeItems.map(async (envelopeItem) => {
+              const file = await getFileServerSide(envelopeItem.documentData);
+              const fileName = envelope.internalVersion === 1 ? envelope.title : envelopeItem.title;
+              return {
+                filename: `${stripPdfExtension(fileName)}.pdf`,
+                content: Buffer.from(file),
+                contentType: 'application/pdf',
+              };
+            }),
+          );
 
       await emailTransport.sendMail({
         to: {
@@ -278,12 +304,15 @@ export const run = async ({ payload, io }: { payload: TSendSigningEmailJobDefini
   });
 
   // Compute the first reminder time based on the envelope's effective settings.
-  await updateRecipientNextReminder({
-    recipientId: recipient.id,
-    envelopeId: envelope.id,
-    sentAt,
-    lastReminderSentAt: null,
-  });
+  // CCs have nothing to sign, so they must never be scheduled for reminders.
+  if (!isCc) {
+    await updateRecipientNextReminder({
+      recipientId: recipient.id,
+      envelopeId: envelope.id,
+      sentAt,
+      lastReminderSentAt: null,
+    });
+  }
 
   await prisma.documentAuditLog.create({
     data: createDocumentAuditLogData({

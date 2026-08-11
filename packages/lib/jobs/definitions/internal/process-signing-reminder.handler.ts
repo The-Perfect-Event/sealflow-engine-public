@@ -132,10 +132,12 @@ export const run = async ({ payload, io }: { payload: TProcessSigningReminderJob
 
   const recipientActionVerb = i18n._(RECIPIENT_ROLES_DESCRIPTION[recipient.role].actionVerb).toLowerCase();
 
-  let emailSubject = i18n._(msg`Reminder: Please ${recipientActionVerb} the document "${envelope.title}"`);
+  // Adobe parity: "Reminder: Waiting for you to sign <title>" — the title in the
+  // subject so the recipient knows which document without opening the email.
+  let emailSubject = i18n._(msg`Reminder: Waiting for you to ${recipientActionVerb} ${envelope.title}`);
 
   if (organisationType === OrganisationType.ORGANISATION) {
-    emailSubject = i18n._(msg`Reminder: ${envelope.team.name} invited you to ${recipientActionVerb} a document`);
+    emailSubject = i18n._(msg`Reminder: Waiting for you to ${recipientActionVerb} ${envelope.title}`);
   }
 
   const customEmailTemplate = {
