@@ -153,7 +153,7 @@ export const run = async ({ payload, io }: { payload: TSendDocumentCompletedEmai
       ],
       from: senderEmail,
       replyTo: replyToEmail,
-      subject: i18n._(msg`Signing Complete!`),
+      subject: i18n._(msg`${envelope.title} is Signed and Filed!`),
       html,
       text,
       attachments: completedDocumentEmailAttachments,
@@ -253,7 +253,7 @@ export const run = async ({ payload, io }: { payload: TSendDocumentCompletedEmai
         subject:
           isDirectTemplate && envelope.documentMeta?.subject
             ? renderCustomEmailTemplate(envelope.documentMeta.subject, customEmailTemplate)
-            : i18n._(msg`Signing Complete!`),
+            : i18n._(msg`${envelope.title} is Signed and Filed!`),
         html,
         text,
         attachments: completedDocumentEmailAttachments,

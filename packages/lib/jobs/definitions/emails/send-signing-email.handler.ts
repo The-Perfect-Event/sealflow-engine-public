@@ -127,7 +127,7 @@ export const run = async ({ payload, io }: { payload: TSendSigningEmailJobDefini
   const recipientActionVerb = i18n._(RECIPIENT_ROLES_DESCRIPTION[recipient.role].actionVerb).toLowerCase();
 
   let emailMessage = customEmail?.message || '';
-  let emailSubject = i18n._(msg`Please ${recipientActionVerb} this document`);
+  let emailSubject = i18n._(msg`${envelope.title} has been sent out for signature to ${name || email}`);
 
   if (selfSigner) {
     emailMessage = i18n._(
@@ -144,7 +144,7 @@ export const run = async ({ payload, io }: { payload: TSendSigningEmailJobDefini
   }
 
   if (organisationType === OrganisationType.ORGANISATION) {
-    emailSubject = i18n._(msg`${team.name} invited you to ${recipientActionVerb} a document`);
+    emailSubject = i18n._(msg`${envelope.title} has been sent out for signature to ${name || email}`);
     emailMessage = customEmail?.message ?? '';
 
     if (!emailMessage) {
