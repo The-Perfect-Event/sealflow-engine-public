@@ -21,6 +21,8 @@ import { assertOrganisationRatesAndLimits } from '../../../server-only/rate-limi
 import { updateRecipientNextReminder } from '../../../server-only/recipient/update-recipient-next-reminder';
 import { DOCUMENT_AUDIT_LOG_TYPE } from '../../../types/document-audit-logs';
 import { extractDerivedDocumentEmailSettings } from '../../../types/document-email';
+import { stripPdfExtension } from '../../../universal/strip-pdf-extension';
+import { getFileServerSide } from '../../../universal/upload/get-file.server';
 import { createDocumentAuditLogData } from '../../../utils/document-audit-logs';
 import { unsafeBuildEnvelopeIdQuery } from '../../../utils/envelope';
 import { renderCustomEmailTemplate } from '../../../utils/render-custom-email-template';
@@ -55,6 +57,18 @@ export const run = async ({ payload, io }: { payload: TSendSigningEmailJobDefini
       },
       include: {
         documentMeta: true,
+        envelopeItems: {
+          include: {
+            documentData: {
+              select: {
+                type: true,
+                id: true,
+                data: true,
+              },
+            },
+          },
+        },
+        recipients: true,
         user: {
           select: {
             disabled: true,
@@ -152,8 +166,8 @@ export const run = async ({ payload, io }: { payload: TSendSigningEmailJobDefini
 
       emailMessage = i18n._(
         settings.includeSenderDetails
-          ? msg`${inviterName} on behalf of "${team.name}" has invited you to ${recipientActionVerb} the document "${envelope.title}".`
-          : msg`${team.name} has invited you to ${recipientActionVerb} the document "${envelope.title}".`,
+          ? msg`${inviterName} on behalf of "${team.name}" has sent you "${envelope.title}" to ${recipientActionVerb}. The document is attached for your reference. When all parties have completed it, everyone will receive the final signed PDF.`
+          : msg`${team.name} has sent you "${envelope.title}" to ${recipientActionVerb}. The document is attached for your reference. When all parties have completed it, everyone will receive the final signed PDF.`,
       );
     }
   }
@@ -215,6 +229,20 @@ export const run = async ({ payload, io }: { payload: TSendSigningEmailJobDefini
         }),
       ]);
 
+      // Attach the (unsigned) document PDF to the signing request, matching
+      // Adobe's behaviour so the recipient sees the contract in their inbox.
+      const attachments = await Promise.all(
+        envelope.envelopeItems.map(async (envelopeItem) => {
+          const file = await getFileServerSide(envelopeItem.documentData);
+          const fileName = envelope.internalVersion === 1 ? envelope.title : envelopeItem.title;
+          return {
+            filename: `${stripPdfExtension(fileName)}.pdf`,
+            content: Buffer.from(file),
+            contentType: 'application/pdf',
+          };
+        }),
+      );
+
       await emailTransport.sendMail({
         to: {
           name: recipient.name,
@@ -225,6 +253,7 @@ export const run = async ({ payload, io }: { payload: TSendSigningEmailJobDefini
         subject: renderCustomEmailTemplate(documentMeta?.subject || emailSubject, customEmailTemplate),
         html,
         text,
+        attachments,
         headers: buildEnvelopeEmailHeaders({
           userId,
           envelopeId: envelope.id,
