@@ -17,7 +17,9 @@ export const DocumentSigningDisclosure = ({ className, ...props }: DocumentSigni
       <span className="mt-2 block">
         <Trans>
           Read the full{' '}
-          <Link className="text-documenso-700 underline" to="/articles/signature-disclosure" target="_blank">
+          {/* text-primary (not the static documenso palette) so the link follows
+              the signing team's branding colors on branded signing pages. */}
+          <Link className="text-primary underline" to="/articles/signature-disclosure" target="_blank">
             signature disclosure
           </Link>
           .
