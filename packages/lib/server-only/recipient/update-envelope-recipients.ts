@@ -8,7 +8,7 @@ import { prisma } from '@documenso/prisma';
 import { EnvelopeType, RecipientRole, SendStatus, SigningStatus } from '@prisma/client';
 
 import { AppError, AppErrorCode } from '../../errors/app-error';
-import { extractLegacyIds } from '../../universal/id';
+import { extractLegacyIds, nanoid } from '../../universal/id';
 import type { EnvelopeIdOptions } from '../../utils/envelope';
 import { mapFieldToLegacyField } from '../../utils/fields';
 import { canRecipientBeModified } from '../../utils/recipients';
@@ -153,6 +153,12 @@ export const updateEnvelopeRecipients = async ({
             sendStatus: mergedRecipient.role === RecipientRole.CC ? SendStatus.SENT : SendStatus.NOT_SENT,
             signingStatus: mergedRecipient.role === RecipientRole.CC ? SigningStatus.SIGNED : SigningStatus.NOT_SIGNED,
             authOptions,
+            // Rotate the signing token when the email changes: the old link
+            // was delivered to the REPLACED person, who could otherwise still
+            // open the live signing session and sign in the replacement's
+            // place. Unchanged-email updates keep the token so already-sent
+            // links stay valid.
+            ...(updateData.email && updateData.email !== originalRecipient.email ? { token: nanoid() } : {}),
           },
           include: {
             fields: true,

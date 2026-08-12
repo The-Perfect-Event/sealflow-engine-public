@@ -1,4 +1,3 @@
-import { mailer } from '@documenso/email/mailer';
 import DocumentRejectedEmail from '@documenso/email/templates/document-rejected';
 import DocumentRejectionConfirmedEmail from '@documenso/email/templates/document-rejection-confirmed';
 import { isRecipientEmailValidForSending } from '@documenso/lib/utils/recipients';
@@ -9,7 +8,6 @@ import { createElement } from 'react';
 
 import { getI18nInstance } from '../../../client-only/providers/i18n-server';
 import { NEXT_PUBLIC_WEBAPP_URL } from '../../../constants/app';
-import { DOCUMENSO_INTERNAL_EMAIL } from '../../../constants/email';
 import { getEmailContext } from '../../../server-only/email/get-email-context';
 import { extractDerivedDocumentEmailSettings } from '../../../types/document-email';
 import { unsafeBuildEnvelopeIdQuery } from '../../../utils/envelope';
@@ -77,7 +75,8 @@ export const run = async ({ payload, io }: { payload: TSendSigningRejectionEmail
 
   // Send confirmation email to the recipient who rejected.
   // Skipped when the organisation has email sending disabled, since this is sent on its behalf.
-  // The owner notification below intentionally uses the internal Sealflow email, so it still sends.
+  // The owner notification below still sends regardless — it is an internal
+  // notification to the document owner, not outbound mail on the org's behalf.
   if (!emailsDisabled && isRecipientEmailValidForSending(recipient)) {
     await io.runTask('send-rejection-confirmation-email', async () => {
       const recipientTemplate = createElement(DocumentRejectionConfirmedEmail, {
@@ -130,12 +129,18 @@ export const run = async ({ payload, io }: { payload: TSendSigningRejectionEmail
       }),
     ]);
 
-    await mailer.sendMail({
+    // Upstream sent this from DOCUMENSO_INTERNAL_EMAIL via the global mailer
+    // ("purposefully"), but on our fork that means an unbranded
+    // noreply@documenso.com sender — which production SES would reject as an
+    // unverified identity, silently dropping every owner rejection notice.
+    // Use the same org transport + branded sender as every other email.
+    await emailTransport.sendMail({
       to: {
         name: documentOwner.name || '',
         address: documentOwner.email,
       },
-      from: DOCUMENSO_INTERNAL_EMAIL, // Purposefully using internal email here.
+      from: senderEmail,
+      replyTo: replyToEmail,
       subject: i18n._(msg`Document "${envelope.title}" - Rejected by ${recipient.name}`),
       html,
       text,
