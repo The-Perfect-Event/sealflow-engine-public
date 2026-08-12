@@ -13,6 +13,13 @@
 
 **Important:** Do not run `npm run build` to verify changes unless explicitly asked. Builds take a long time (~2 minutes). Use `npx tsc --noEmit` for type checking specific packages if needed.
 
+### Running against the local TPE-Sales stack
+
+Two non-obvious requirements when running the engine alongside the local TPE-Sales app (frontend on :3000, backend on :5005):
+
+- **`PORT=3001 npm run dev`** — `.env` ships `PORT=3000`, which collides with the TPE-Sales frontend. The TPE-Sales backend expects the engine at `http://localhost:3001/api/v2`.
+- **`NEXT_PRIVATE_WEBHOOK_SSRF_BYPASS_HOSTS="127.0.0.1,localhost"`** (in `.env`) — without it the webhook SSRF guard (`packages/lib/server-only/webhooks/assert-webhook-url.ts`) rejects the local backend's loopback webhook URL and **every webhook silently fails** ("resolves to a private or loopback address" — visible only in `WebhookCall` rows). Statuses in TPE-Sales then never update. Production is unaffected (its webhook target is a public domain).
+
 ## Code Style Guidelines
 
 - Use TypeScript for all code; prefer `type` over `interface`
