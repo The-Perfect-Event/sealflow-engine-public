@@ -276,7 +276,11 @@ export const run = async ({ payload, io }: { payload: TSendSigningEmailJobDefini
         },
         from: senderEmail,
         replyTo: replyToEmail,
-        subject: renderCustomEmailTemplate(documentMeta?.subject || emailSubject, customEmailTemplate),
+        // A custom subject is signer-facing ("please sign …") — never apply it
+        // to a CC, whose subject must stay "You have been copied on …".
+        subject: isCc
+          ? emailSubject
+          : renderCustomEmailTemplate(documentMeta?.subject || emailSubject, customEmailTemplate),
         html,
         text,
         attachments,

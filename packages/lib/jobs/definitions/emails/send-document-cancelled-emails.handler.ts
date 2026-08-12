@@ -2,7 +2,7 @@ import DocumentCancelTemplate from '@documenso/email/templates/document-cancel';
 import { isRecipientEmailValidForSending } from '@documenso/lib/utils/recipients';
 import { prisma } from '@documenso/prisma';
 import { msg } from '@lingui/core/macro';
-import { EnvelopeType, ReadStatus, RecipientRole, SendStatus, SigningStatus } from '@prisma/client';
+import { EnvelopeType, ReadStatus, SendStatus, SigningStatus } from '@prisma/client';
 import { createElement } from 'react';
 
 import { getI18nInstance } from '../../../client-only/providers/i18n-server';
@@ -88,13 +88,14 @@ export const run = async ({ payload, io }: { payload: TSendDocumentCancelledEmai
 
   const i18n = await getI18nInstance(emailLanguage);
 
-  // Send cancellation emails to recipients who have been sent the document or viewed it.
-  // CC recipients are excluded because they were never actually emailed about the document
-  // (CC recipients are created with sendStatus=SENT by default but never receive a signing
-  // invitation), so notifying them about a cancellation they never knew about is unsolicited.
+  // Send cancellation emails to recipients who have been sent the document or
+  // viewed it. CC recipients are INCLUDED: they receive a "you have been
+  // copied — you'll get the signed copy on completion" email at send time, so
+  // staying silent on cancellation would leave them waiting for a signed copy
+  // that never arrives. (CCs are created with sendStatus=SENT, so the existing
+  // condition covers them.)
   const recipientsToNotify = envelope.recipients.filter(
     (recipient) =>
-      recipient.role !== RecipientRole.CC &&
       (recipient.sendStatus === SendStatus.SENT || recipient.readStatus === ReadStatus.OPENED) &&
       recipient.signingStatus !== SigningStatus.REJECTED &&
       isRecipientEmailValidForSending(recipient),
