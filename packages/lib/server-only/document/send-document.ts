@@ -438,6 +438,17 @@ export const extractFieldAutoInsertValues = (
   unknownField: Field,
   recipient: Pick<Recipient, 'email'>,
 ): { fieldId: number; customText: string } | null => {
+  // Hard guard: signature-type fields and initials must NEVER be auto-inserted.
+  // They represent the signer's actual signing act and can only be inserted by
+  // the signer through the signing ceremony (sign-field-with-token).
+  if (
+    unknownField.type === FieldType.SIGNATURE ||
+    unknownField.type === FieldType.FREE_SIGNATURE ||
+    unknownField.type === FieldType.INITIALS
+  ) {
+    return null;
+  }
+
   const parsedField = ZFieldAndMetaSchema.safeParse(unknownField);
 
   if (parsedField.error) {

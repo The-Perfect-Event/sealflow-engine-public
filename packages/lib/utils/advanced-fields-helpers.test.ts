@@ -6,11 +6,17 @@ import { isRequiredField } from './advanced-fields-helpers';
 const field = (type: FieldType, fieldMeta: unknown): Field => ({ type, fieldMeta }) as unknown as Field;
 
 describe('isRequiredField', () => {
-  describe('honors an explicit required toggle for every field type', () => {
-    it('treats a signature toggled optional as optional (previously always required)', () => {
-      expect(isRequiredField(field(FieldType.SIGNATURE, { type: 'signature', required: false }))).toBe(false);
+  describe('signature-type fields are unconditionally required', () => {
+    it('ignores an explicit optional toggle on a signature (documents must never complete unsigned)', () => {
+      expect(isRequiredField(field(FieldType.SIGNATURE, { type: 'signature', required: false }))).toBe(true);
     });
 
+    it('ignores an explicit optional toggle on a free signature', () => {
+      expect(isRequiredField(field(FieldType.FREE_SIGNATURE, { type: 'signature', required: false }))).toBe(true);
+    });
+  });
+
+  describe('honors an explicit required toggle for non-signature field types', () => {
     it('treats a signature toggled required as required', () => {
       expect(isRequiredField(field(FieldType.SIGNATURE, { type: 'signature', required: true }))).toBe(true);
     });

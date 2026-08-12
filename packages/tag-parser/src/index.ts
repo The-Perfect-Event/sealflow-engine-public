@@ -1,28 +1,28 @@
-import type { ParseResult, ParsedField, TagFailure } from './types.js';
 import { decodeTag, TagDecodeError } from './decoder.js';
 import { readTaggedPdf } from './reader.js';
-import { overlayTagBoxes, type OverlayRect } from './writer.js';
+import type { ParsedField, ParseResult, TagFailure } from './types.js';
+import { type OverlayRect, overlayTagBoxes } from './writer.js';
 
-export * from './types.js';
-export { decodeTag, findTags, TagDecodeError } from './decoder.js';
-export { readTaggedPdf } from './reader.js';
-export { overlayTagBoxes } from './writer.js';
 export {
-  toDocumensoFieldCreate,
+  DEFAULT_DIMENSIONS,
+  KNOWN_SUBTYPES,
+  mmToPt,
+  PREFIX_MAP,
+  PT_PER_MM,
+} from './constants.js';
+export { decodeTag, findTags, TagDecodeError } from './decoder.js';
+export {
   buildFieldCreateData,
   buildPlaceholderRecipients,
-  placeholderEmail,
   type DocumensoFieldCreate,
-  type DocumensoRecipientCreate,
   type DocumensoFieldType,
+  type DocumensoRecipientCreate,
+  placeholderEmail,
+  toDocumensoFieldCreate,
 } from './documenso.js';
-export {
-  PREFIX_MAP,
-  KNOWN_SUBTYPES,
-  DEFAULT_DIMENSIONS,
-  PT_PER_MM,
-  mmToPt,
-} from './constants.js';
+export { readTaggedPdf } from './reader.js';
+export * from './types.js';
+export { overlayTagBoxes } from './writer.js';
 
 /**
  * Parse an Adobe-tagged PDF into a cleaned PDF + Documenso field list.
@@ -52,13 +52,16 @@ export async function parseAdobeTaggedPdf(pdfBytes: Uint8Array): Promise<ParseRe
   }
 
   // Overlay ALL detected occurrences (parsed + failed) so the cleaned PDF never
-  // shows raw `{{...}}` text, regardless of decode success.
-  const rects: OverlayRect[] = occurrences.map((o) => ({
-    page: o.position.page,
-    boundingBox: o.boundingBox,
-  }));
-  const cleanPdfBytes =
-    occurrences.length === 0 ? pdfBytes : await overlayTagBoxes(pdfBytes, rects);
+  // shows raw `{{...}}` text, regardless of decode success. Per-segment boxes
+  // are used (not the union box) so a tag that wraps onto multiple lines never
+  // whites out unrelated content sitting between/beside its segments.
+  const rects: OverlayRect[] = occurrences.flatMap((o) =>
+    (o.segmentBoxes.length > 0 ? o.segmentBoxes : [o.boundingBox]).map((boundingBox) => ({
+      page: o.position.page,
+      boundingBox,
+    })),
+  );
+  const cleanPdfBytes = occurrences.length === 0 ? pdfBytes : await overlayTagBoxes(pdfBytes, rects);
 
   return {
     cleanPdfBytes,

@@ -3,23 +3,9 @@
  * See tools/adobe-tag-parser/README.md for the tag taxonomy reference.
  */
 
-export type FieldType =
-  | 'SIGNATURE'
-  | 'INITIALS'
-  | 'DATE'
-  | 'EMAIL'
-  | 'NAME'
-  | 'CHECKBOX'
-  | 'TEXT';
+export type FieldType = 'SIGNATURE' | 'INITIALS' | 'DATE' | 'EMAIL' | 'NAME' | 'CHECKBOX' | 'TEXT';
 
-export type FieldSubtype =
-  | 'phone'
-  | 'title'
-  | 'company'
-  | 'address'
-  | 'url'
-  | 'signature'
-  | 'initials';
+export type FieldSubtype = 'phone' | 'title' | 'company' | 'address' | 'url' | 'signature' | 'initials';
 
 export interface FieldDimensions {
   widthMm: number;
@@ -32,6 +18,13 @@ export interface FieldPosition {
   /** Points from the top-left of the page; anchored to the tag's first character. */
   xPt: number;
   yPt: number;
+  /**
+   * Y (points from the top-left of the page) of the text BASELINE of the
+   * tag's first line. When a long tag wraps onto multiple lines this stays on
+   * the line where the tag begins, unlike `boundingBox` which unions every
+   * line the tag touches. Field placement should align to this baseline.
+   */
+  baselineYPt: number;
 }
 
 export interface BoundingBox {

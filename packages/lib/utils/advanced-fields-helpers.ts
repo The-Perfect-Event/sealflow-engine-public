@@ -17,14 +17,29 @@ export const ADVANCED_FIELD_TYPES_WITH_OPTIONAL_SETTING: FieldType[] = [
 ];
 
 /**
+ * Field types that must ALWAYS be completed by the signer. An explicit
+ * `fieldMeta.required: false` is ignored for these — a document must never be
+ * completable while a signature field is unsigned (see the 2026-08 incident
+ * where Adobe-tag parsed signature fields carried `required: false` and
+ * documents completed without any signature).
+ */
+export const ALWAYS_REQUIRED_FIELD_TYPES: FieldType[] = [FieldType.SIGNATURE, FieldType.FREE_SIGNATURE];
+
+/**
  * Whether a field is required to be inserted.
  *
- * Honors an explicit `fieldMeta.required` for EVERY field type. When it's unset
- * (or the meta is missing/unparseable), falls back to the type's historical
- * default so existing and auto-placed fields keep their prior behavior — data
- * fields (text/number/…) default optional, everything else defaults required.
+ * Honors an explicit `fieldMeta.required` for every field type EXCEPT
+ * signature-type fields, which are unconditionally required. When `required`
+ * is unset (or the meta is missing/unparseable), falls back to the type's
+ * historical default so existing and auto-placed fields keep their prior
+ * behavior — data fields (text/number/…) default optional, everything else
+ * defaults required.
  */
 export const isRequiredField = (field: Field) => {
+  if (ALWAYS_REQUIRED_FIELD_TYPES.includes(field.type)) {
+    return true;
+  }
+
   const defaultRequired = !ADVANCED_FIELD_TYPES_WITH_OPTIONAL_SETTING.includes(field.type);
 
   if (!field.fieldMeta) {

@@ -176,6 +176,9 @@ export const completeDocumentWithToken = async ({
       envelopeId: envelope.id,
       recipientId: recipient.id,
     },
+    include: {
+      signature: true,
+    },
   });
 
   // This should be scoped to the current recipient.
@@ -273,6 +276,25 @@ export const completeDocumentWithToken = async ({
 
   if (fieldsContainUnsignedRequiredField(fields)) {
     throw new Error(`Recipient ${recipient.id} has unsigned fields`);
+  }
+
+  // Defense in depth: a recipient can NEVER complete signing while any of
+  // their signature-type fields lacks an actual signature. This must hold
+  // regardless of what `fieldMeta.required` claims and regardless of any
+  // insertion state that may have been set outside the signing ceremony.
+  const invalidSignatureField = fields.find(
+    (field) =>
+      (field.type === FieldType.SIGNATURE || field.type === FieldType.FREE_SIGNATURE) &&
+      (!field.inserted ||
+        !field.signature ||
+        (!field.signature.signatureImageAsBase64 && !field.signature.typedSignature)),
+  );
+
+  if (invalidSignatureField) {
+    throw new AppError(AppErrorCode.INVALID_REQUEST, {
+      message: `Recipient ${recipient.id} cannot complete signing: signature field ${invalidSignatureField.id} has no signature`,
+      statusCode: 400,
+    });
   }
 
   await prisma.$transaction(async (tx) => {

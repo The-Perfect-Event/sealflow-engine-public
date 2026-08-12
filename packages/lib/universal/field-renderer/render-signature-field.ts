@@ -159,6 +159,14 @@ const createFieldSignature = (field: FieldToRender, options: RenderFieldElementO
   if (mode === 'sign' || mode === 'export') {
     textToRender = fieldTypeName;
 
+    // Export mode burns fields into the final PDF: an uninserted signature
+    // field must render NOTHING. Rendering the placeholder label here would
+    // burn a cursive "SIGNATURE" into the document as if it were a signature.
+    // (Mirrors the generic text renderer, which blanks placeholders on export.)
+    if (mode === 'export' && !field.inserted) {
+      textToRender = '';
+    }
+
     if (field.inserted && !signature) {
       throw new AppError('MISSING_SIGNATURE');
     }

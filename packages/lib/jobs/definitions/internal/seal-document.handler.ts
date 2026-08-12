@@ -430,7 +430,13 @@ const decorateAndSignPdf = async ({
 
   // Handle V2 envelope insertions.
   if (envelope.internalVersion === 2) {
-    const fieldsGroupedByPage = groupBy(envelopeItemFields, (field) => field.page);
+    // Only ever burn INSERTED fields into the sealed PDF. Uninserted fields
+    // (e.g. optional fields the signer skipped) must not render at all —
+    // rendering them would burn their placeholder label (e.g. a cursive
+    // "SIGNATURE") into the final document as if it were signed content.
+    const insertedFields = envelopeItemFields.filter((field) => field.inserted);
+
+    const fieldsGroupedByPage = groupBy(insertedFields, (field) => field.page);
 
     for (const [pageNumber, fields] of Object.entries(fieldsGroupedByPage)) {
       const page = pdfDoc.getPage(Number(pageNumber) - 1);

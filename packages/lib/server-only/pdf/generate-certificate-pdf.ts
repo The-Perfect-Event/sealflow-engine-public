@@ -2,7 +2,7 @@ import { PDF } from '@libpdf/core';
 import { i18n } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import type { DocumentMeta, Envelope, Field, Recipient, Signature } from '@prisma/client';
-import { FieldType } from '@prisma/client';
+import { FieldType, RecipientRole } from '@prisma/client';
 import { colord } from 'colord';
 import { prop, sortBy } from 'remeda';
 import { match } from 'ts-pattern';
@@ -40,8 +40,20 @@ export type GenerateCertificatePdfOptions = {
   pageHeight: number;
 };
 
+/**
+ * Roles that never sign and therefore must not appear in the certificate's
+ * signer blocks. CC recipients are auto-marked `signingStatus: SIGNED`
+ * internally (they never actually sign), so listing them on the certificate
+ * would misleadingly imply they signed. Industry convention (Adobe Sign,
+ * DocuSign) lists signing participants only — CC delivery is still recorded
+ * in the audit trail.
+ */
+const NON_SIGNING_CERTIFICATE_ROLES: RecipientRole[] = [RecipientRole.CC, RecipientRole.VIEWER];
+
 export const generateCertificatePdf = async (options: GenerateCertificatePdfOptions) => {
-  const { envelope, envelopeOwner, recipients, fields, language, pageWidth, pageHeight } = options;
+  const { envelope, envelopeOwner, fields, language, pageWidth, pageHeight } = options;
+
+  const recipients = options.recipients.filter((recipient) => !NON_SIGNING_CERTIFICATE_ROLES.includes(recipient.role));
 
   const documentLanguage = ZSupportedLanguageCodeSchema.parse(language);
 

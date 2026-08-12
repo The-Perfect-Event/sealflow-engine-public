@@ -1,5 +1,6 @@
 import type { ParsedField } from '@documenso/tag-parser';
 import { PT_PER_MM, parseAdobeTaggedPdf } from '@documenso/tag-parser';
+import { DEFAULT_SIGNATURE_TEXT_FONT_SIZE, DEFAULT_STANDARD_FONT_SIZE } from '../../constants/pdf';
 import { type TFieldAndMeta, ZEnvelopeFieldAndMetaSchema } from '../../types/field-meta';
 import type { PlaceholderInfo } from './auto-place-fields';
 
@@ -61,16 +62,47 @@ export const extractAdobeTagPlaceholders = async (
 
     const heightPt = field.dimensions.heightMm * PT_PER_MM;
 
-    // `position.yPt` is the top of the tag glyph, and PlaceholderInfo.y is the
-    // field-box TOP (boxes grow downward). Text-family fields are ~one line
-    // tall, so a top-anchored box lands on the line. Signature/initial boxes
-    // are taller, so top-anchoring drops the rendered mark well below the
-    // signing line. Anchor those two by the tag BASELINE instead (box bottom on
-    // the line, extending upward) so they sit on their line like text fields.
-    // Baseline (top-origin) = tag glyph top + glyph height (boundingBox.heightPt).
-    const isBaselineAnchored = field.type === 'SIGNATURE' || field.type === 'INITIALS';
-    const tagBaselineYpt = field.position.yPt + field.boundingBox.heightPt;
-    const yPt = isBaselineAnchored ? tagBaselineYpt - heightPt : field.position.yPt;
+    /*
+      Vertical anchoring — align the RENDERED INK to the tag's first-line
+      baseline, compensating for how each renderer positions content inside
+      the field box:
+
+      - The signature renderer vertically CENTERS its content (typed text or
+        drawn image) in the field box. Konva centers each text line's em-box,
+        which puts the text baseline ~0.3 × fontSize below the box centre. So
+        place the box centre 0.3 × (signature font size) ABOVE the baseline,
+        making the rendered signature sit ON the tag's line (drawn images
+        straddle it naturally, like ink on a signing line).
+
+      - Generic text fields (initials/name/email/date/text) render BOTTOM
+        aligned: the text block's bottom sits at the field-box bottom and the
+        baseline ~0.2 × fontSize above it. So place the box bottom
+        0.2 × (standard font size) BELOW the baseline.
+
+      `position.baselineYPt` is the baseline of the line where the tag BEGINS.
+      Long tags (common with `:dimension(...)`) often wrap onto a second line;
+      the previous math derived the baseline from the union bounding box,
+      anchoring fields a full line below where the tag starts.
+
+      Checkboxes keep the historical top anchor (box top at the tag glyph top).
+    */
+    const tagBaselineYpt = field.position.baselineYPt;
+
+    let yPt: number;
+
+    switch (field.type) {
+      case 'SIGNATURE':
+        yPt = tagBaselineYpt - 0.3 * DEFAULT_SIGNATURE_TEXT_FONT_SIZE - heightPt / 2;
+        break;
+
+      case 'CHECKBOX':
+        yPt = field.position.yPt;
+        break;
+
+      default:
+        yPt = tagBaselineYpt + 0.2 * DEFAULT_STANDARD_FONT_SIZE - heightPt;
+        break;
+    }
 
     placeholders.push({
       // Raw tag preserved for downstream logging / debugging.

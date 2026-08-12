@@ -23,7 +23,11 @@ export const generatePartialSignedPdf = async ({ pdfData, fields }: GeneratePart
   pdfDoc.flattenAll();
   pdfDoc.upgradeVersion('1.7');
 
-  const fieldsGroupedByPage = groupBy(fields, (field) => field.page);
+  // Only ever burn INSERTED fields — uninserted fields must not render their
+  // placeholder labels into the served PDF.
+  const insertedFields = fields.filter((field) => field.inserted);
+
+  const fieldsGroupedByPage = groupBy(insertedFields, (field) => field.page);
 
   for (const [pageNumber, pageFields] of Object.entries(fieldsGroupedByPage)) {
     const page = pdfDoc.getPage(Number(pageNumber) - 1);

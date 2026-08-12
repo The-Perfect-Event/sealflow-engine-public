@@ -1,5 +1,5 @@
-import type { FieldPosition, BoundingBox } from './types.js';
 import { findTags } from './decoder.js';
+import type { BoundingBox, FieldPosition } from './types.js';
 
 // pdfjs-dist legacy build runs on the main thread in Node (no worker/canvas
 // needed for text extraction). Imported lazily so the pure decoder stays
@@ -17,7 +17,15 @@ function getPdfjs(): Promise<PdfjsModule> {
 export interface TagOccurrence {
   raw: string;
   position: FieldPosition; // top-left of the tag's first character
-  boundingBox: BoundingBox; // visible-text box, for the overlay rectangle
+  boundingBox: BoundingBox; // union visible-text box (all lines the tag touches)
+  /**
+   * Per-text-item boxes covering only the tag's own characters. When a long
+   * tag wraps onto multiple lines, whiting out the union `boundingBox` would
+   * also erase unrelated content sitting between/beside the tag segments
+   * (e.g. the label to the tag's left on the first line). Overlay these
+   * instead.
+   */
+  segmentBoxes: BoundingBox[];
 }
 
 export interface PageSize {
@@ -82,7 +90,9 @@ export async function readTaggedPdf(pdfBytes: Uint8Array): Promise<ReadResult> {
 
       for (const raw of content.items) {
         // Skip non-text marked-content items.
-        if (!('str' in raw)) continue;
+        if (!('str' in raw)) {
+          continue;
+        }
         const item = raw as { str: string; width: number; height: number; transform: number[]; hasEOL?: boolean };
         const transform = item.transform;
         const geom: ItemGeom = {
@@ -96,16 +106,25 @@ export async function readTaggedPdf(pdfBytes: Uint8Array): Promise<ReadResult> {
         items.push(geom);
         text += item.str;
         // Preserve line breaks so tags can't be stitched across lines.
-        if (item.hasEOL) text += '\n';
+        if (item.hasEOL) {
+          text += '\n';
+        }
       }
 
       for (const match of findTags(text)) {
         const startOffset = match.index;
         const endOffset = match.index + match.raw.length;
         const box = boundingBoxForRange(items, startOffset, endOffset, pageHeight);
-        if (!box) continue; // geometry not recoverable; skip silently
+        if (!box) {
+          continue; // geometry not recoverable; skip silently
+        }
         box.position.page = pageNum; // 1-indexed
-        occurrences.push({ raw: match.raw, position: box.position, boundingBox: box.boundingBox });
+        occurrences.push({
+          raw: match.raw,
+          position: box.position,
+          boundingBox: box.boundingBox,
+          segmentBoxes: box.segmentBoxes,
+        });
       }
 
       page.cleanup();
@@ -127,18 +146,22 @@ function boundingBoxForRange(
   startOffset: number,
   endOffset: number,
   pageHeight: number,
-): { position: FieldPosition; boundingBox: BoundingBox } | undefined {
+): { position: FieldPosition; boundingBox: BoundingBox; segmentBoxes: BoundingBox[] } | undefined {
   let minLeft = Infinity;
   let maxRight = -Infinity;
   let maxTopFromBottom = -Infinity; // top edge, measured from page bottom
   let minBottomFromBottom = Infinity;
   let firstLeft: number | undefined;
   let firstTopFromBottom: number | undefined;
+  let firstBaselineFromBottom: number | undefined;
+  const segmentBoxes: BoundingBox[] = [];
 
   for (const item of items) {
     const itemStart = item.charStart;
     const itemEnd = item.charStart + item.str.length;
-    if (itemEnd <= startOffset || itemStart >= endOffset) continue; // no overlap
+    if (itemEnd <= startOffset || itemStart >= endOffset) {
+      continue; // no overlap
+    }
 
     const covStart = Math.max(startOffset, itemStart) - itemStart;
     const covEnd = Math.min(endOffset, itemEnd) - itemStart;
@@ -152,19 +175,34 @@ function boundingBoxForRange(
     maxTopFromBottom = Math.max(maxTopFromBottom, topFromBottom);
     minBottomFromBottom = Math.min(minBottomFromBottom, bottomFromBottom);
 
+    // Per-item overlay box covering only this item's tag characters.
+    segmentBoxes.push({
+      xPt: subLeft,
+      yPt: pageHeight - topFromBottom,
+      widthPt: subRight - subLeft,
+      heightPt: topFromBottom - bottomFromBottom,
+    });
+
     if (firstLeft === undefined || itemStart <= startOffset) {
       // The item that actually contains the tag's first character.
       if (itemStart <= startOffset && startOffset < itemEnd) {
         firstLeft = subLeft;
         firstTopFromBottom = topFromBottom;
+        firstBaselineFromBottom = bottomFromBottom;
       } else if (firstLeft === undefined) {
         firstLeft = subLeft;
         firstTopFromBottom = topFromBottom;
+        firstBaselineFromBottom = bottomFromBottom;
       }
     }
   }
 
-  if (!Number.isFinite(minLeft) || firstLeft === undefined || firstTopFromBottom === undefined) {
+  if (
+    !Number.isFinite(minLeft) ||
+    firstLeft === undefined ||
+    firstTopFromBottom === undefined ||
+    firstBaselineFromBottom === undefined
+  ) {
     return undefined;
   }
 
@@ -178,6 +216,7 @@ function boundingBoxForRange(
     page: 0, // set by caller
     xPt: firstLeft,
     yPt: pageHeight - firstTopFromBottom,
+    baselineYPt: pageHeight - firstBaselineFromBottom,
   };
-  return { position, boundingBox };
+  return { position, boundingBox, segmentBoxes };
 }
