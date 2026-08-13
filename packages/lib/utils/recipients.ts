@@ -1,6 +1,6 @@
 import { isSignatureFieldType } from '@documenso/prisma/guards/is-signature-field';
 import type { Envelope } from '@prisma/client';
-import { type Field, RecipientRole, SigningStatus } from '@prisma/client';
+import { type Field, FieldType, RecipientRole, SigningStatus } from '@prisma/client';
 
 import { NEXT_PUBLIC_WEBAPP_URL } from '../constants/app';
 import { AppError, AppErrorCode } from '../errors/app-error';
@@ -44,7 +44,7 @@ export const formatSigningLink = (token: string) => `${NEXT_PUBLIC_WEBAPP_URL()}
  */
 export const canRecipientBeModified = (
   recipient: TRecipientLite,
-  fields: Pick<Field, 'recipientId' | 'inserted'>[],
+  fields: Pick<Field, 'recipientId' | 'inserted' | 'type'>[],
 ) => {
   if (!recipient) {
     return false;
@@ -60,8 +60,21 @@ export const canRecipientBeModified = (
     return false;
   }
 
-  // Deny if the recipient has inserted any fields.
-  if (fields.some((field) => field.recipientId === recipient.id && field.inserted)) {
+  // Deny if the recipient has performed a signing act. Only signature-type
+  // insertions prove interaction: EMAIL and prefilled TEXT fields are
+  // AUTO-inserted at send time for every recipient — including sequential
+  // signers who have never been emailed (extractFieldAutoInsertValues) —
+  // so counting every inserted field made such signers impossible to
+  // replace. SIGNATURE / FREE_SIGNATURE / INITIALS are exactly the types
+  // the auto-insert hard guard refuses to touch.
+  if (
+    fields.some(
+      (field) =>
+        field.recipientId === recipient.id &&
+        field.inserted &&
+        (isSignatureFieldType(field.type) || field.type === FieldType.INITIALS),
+    )
+  ) {
     return false;
   }
 
@@ -77,7 +90,7 @@ export const canRecipientBeModified = (
  */
 export const canRecipientFieldsBeModified = (
   recipient: TRecipientLite,
-  fields: Pick<Field, 'recipientId' | 'inserted'>[],
+  fields: Pick<Field, 'recipientId' | 'inserted' | 'type'>[],
 ) => {
   if (!canRecipientBeModified(recipient, fields)) {
     return false;

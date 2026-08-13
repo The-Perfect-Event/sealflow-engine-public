@@ -5,7 +5,7 @@ import type { ApiRequestMetadata } from '@documenso/lib/universal/extract-reques
 import { createDocumentAuditLogData, diffRecipientChanges } from '@documenso/lib/utils/document-audit-logs';
 import { createRecipientAuthOptions } from '@documenso/lib/utils/document-auth';
 import { prisma } from '@documenso/prisma';
-import { EnvelopeType, RecipientRole, SendStatus, SigningStatus } from '@prisma/client';
+import { EnvelopeType, FieldType, RecipientRole, SendStatus, SigningStatus } from '@prisma/client';
 
 import { AppError, AppErrorCode } from '../../errors/app-error';
 import { extractLegacyIds, nanoid } from '../../universal/id';
@@ -164,6 +164,24 @@ export const updateEnvelopeRecipients = async ({
             fields: true,
           },
         });
+
+        // Send-time auto-insert stamps the recipient's email into their EMAIL
+        // fields (extractFieldAutoInsertValues). When the email changes, those
+        // fields still carry the REPLACED person's address — refresh them or
+        // the sealed PDF shows the wrong email. Applies to the active signer
+        // too (a signed recipient can never reach this point).
+        if (updateData.email && updateData.email !== originalRecipient.email) {
+          await tx.field.updateMany({
+            where: {
+              recipientId: updatedRecipient.id,
+              type: FieldType.EMAIL,
+              inserted: true,
+            },
+            data: {
+              customText: updatedRecipient.email,
+            },
+          });
+        }
 
         // Clear all fields if the recipient role is changed to a type that cannot have fields.
         if (
