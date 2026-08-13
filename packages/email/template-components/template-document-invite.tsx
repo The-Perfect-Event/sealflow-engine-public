@@ -116,6 +116,17 @@ export const TemplateDocumentInvite = ({
             </Section>
           </>
         )}
+
+        {/* Self-whitelisting nudge (Adobe Sign parity): recipients who add the
+            sender to their contacts stop consumer-Gmail spam filtering for
+            every future document. Worded without the literal address — the
+            sender varies per white-labeled organisation. */}
+        <Text className="mt-6 mb-0 text-center text-muted-foreground text-xs">
+          <Trans>
+            To make sure future documents always reach you, please add this email's sender to your contacts or
+            safe-senders list.
+          </Trans>
+        </Text>
       </Section>
     </>
   );
