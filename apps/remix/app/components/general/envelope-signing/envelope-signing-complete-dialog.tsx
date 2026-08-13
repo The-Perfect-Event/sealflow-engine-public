@@ -141,6 +141,12 @@ export const EnvelopeSignerCompleteDialog = () => {
         });
 
         onDocumentError?.();
+
+        // Re-run the loader: if the submit failed because the envelope became
+        // terminal while the page was open (owner cancelled it mid-session),
+        // this swaps the signable UI for the accurate "Document Cancelled" /
+        // completed state instead of stranding the signer on a dead form.
+        void revalidate();
       }
 
       throw err;

@@ -82,7 +82,12 @@ const handleV1Loader = async ({ params, request }: Route.LoaderArgs) => {
 
   const isRecipientsTurn = await getIsRecipientsTurnToSign({ token });
 
-  if (!isRecipientsTurn) {
+  // Cancelled/deleted documents fall through to the "Document Cancelled" page
+  // for every recipient — never to "waiting for others" (see V2 loader).
+  const isDocumentCancelled =
+    !!document.deletedAt || document.status === DocumentStatus.CANCELLED || document.status === DocumentStatus.REJECTED;
+
+  if (!isRecipientsTurn && !isDocumentCancelled) {
     throw redirect(`/sign/${token}/waiting`);
   }
 
@@ -219,7 +224,16 @@ const handleV2Loader = async ({ params, request }: Route.LoaderArgs) => {
 
   const { envelope, recipient, isCompleted, isRejected, isExpired, isRecipientsTurn } = envelopeForSigning;
 
-  if (!isRecipientsTurn) {
+  // A cancelled (or deleted) envelope must fall through to the "Document
+  // Cancelled" page below for EVERY recipient. Without this, a cancelled
+  // envelope rendered the full signable page (status CANCELLED passes the
+  // not-DRAFT query and none of the redirects below match), and the signer
+  // only learned the truth as a raw mutation error AFTER drawing their
+  // signature. Later signers were redirected to "waiting for others" —
+  // waiting on a document that will never progress.
+  const isEnvelopeCancelled = !!envelope.deletedAt || envelope.status === DocumentStatus.CANCELLED;
+
+  if (!isRecipientsTurn && !isEnvelopeCancelled) {
     throw redirect(`/sign/${token}/waiting`);
   }
 
@@ -257,7 +271,9 @@ const handleV2Loader = async ({ params, request }: Route.LoaderArgs) => {
     throw redirect(envelope.documentMeta.redirectUrl || `/sign/${token}/complete`);
   }
 
-  if (isExpired) {
+  // Cancelled wins over recipient-level expiry: "the owner cancelled this"
+  // is the accurate story, not "your signing window ran out".
+  if (isExpired && !isEnvelopeCancelled) {
     throw redirect(`/sign/${token}/expired`);
   }
 
@@ -419,7 +435,11 @@ const SigningPageV1 = ({ data }: { data: Awaited<ReturnType<typeof handleV1Loade
     recipientWithFields,
   } = data;
 
-  if (document.deletedAt || document.status === DocumentStatus.REJECTED) {
+  if (
+    document.deletedAt ||
+    document.status === DocumentStatus.REJECTED ||
+    document.status === DocumentStatus.CANCELLED
+  ) {
     return (
       <div className="-mx-4 flex max-w-[100vw] flex-col items-center overflow-x-hidden px-4 pt-16 md:-mx-8 md:px-8 lg:pt-16 xl:pt-24">
         <SigningCard3D
@@ -508,7 +528,11 @@ const SigningPageV2 = ({ data }: { data: Awaited<ReturnType<typeof handleV2Loade
 
   const { envelope, recipientSignature, recipient } = data.envelopeForSigning;
 
-  if (envelope.deletedAt || envelope.status === DocumentStatus.REJECTED) {
+  if (
+    envelope.deletedAt ||
+    envelope.status === DocumentStatus.REJECTED ||
+    envelope.status === DocumentStatus.CANCELLED
+  ) {
     return (
       <div className="-mx-4 flex max-w-[100vw] flex-col items-center overflow-x-hidden px-4 pt-16 md:-mx-8 md:px-8 lg:pt-16 xl:pt-24">
         <SigningCard3D
