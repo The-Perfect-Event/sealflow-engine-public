@@ -100,6 +100,11 @@ export const TemplateDocumentInvite = ({
               <Button
                 className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-center font-medium text-primary-foreground text-sbase no-underline"
                 href={signDocumentLink}
+                // Open the signing session in its own tab so the recipient
+                // keeps the email they came from — and, after signing, the
+                // completion page doesn't replace whatever they were reading.
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 {match(role)
                   .with(RecipientRole.SIGNER, () => <Trans>View Document to sign</Trans>)
