@@ -213,9 +213,16 @@ export const resendDocument = async ({ id, userId, recipients, teamId, requestMe
 
       const recipientActionVerb = i18n._(RECIPIENT_ROLES_DESCRIPTION[recipient.role].actionVerb).toLowerCase();
 
+      // A recipient who has never been emailed cannot be "reminded" — this is
+      // their FIRST invitation (e.g. they just replaced a previous signer, which
+      // resets sendStatus to NOT_SENT). Send the invite subject instead.
+      const isFirstContact = recipient.sendStatus === SendStatus.NOT_SENT;
+
       // Adobe parity: "Reminder: Waiting for you to sign <title>".
       let emailMessage = envelope.documentMeta.message || '';
-      let emailSubject = i18n._(msg`Reminder: Waiting for you to ${recipientActionVerb} ${envelope.title}`);
+      let emailSubject = isFirstContact
+        ? i18n._(msg`Signature requested on "${envelope.title}"`)
+        : i18n._(msg`Reminder: Waiting for you to ${recipientActionVerb} ${envelope.title}`);
 
       if (selfSigner) {
         emailMessage = i18n._(
@@ -225,7 +232,9 @@ export const resendDocument = async ({ id, userId, recipients, teamId, requestMe
       }
 
       if (organisationType === OrganisationType.ORGANISATION) {
-        emailSubject = i18n._(msg`Reminder: Waiting for you to ${recipientActionVerb} ${envelope.title}`);
+        emailSubject = isFirstContact
+          ? i18n._(msg`Signature requested on "${envelope.title}"`)
+          : i18n._(msg`Reminder: Waiting for you to ${recipientActionVerb} ${envelope.title}`);
         emailMessage =
           envelope.documentMeta.message ||
           i18n._(

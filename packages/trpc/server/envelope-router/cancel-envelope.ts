@@ -14,7 +14,7 @@ export const cancelEnvelopeRoute = authenticatedProcedure
   .output(ZCancelEnvelopeResponseSchema)
   .mutation(async ({ input, ctx }) => {
     const { teamId } = ctx;
-    const { envelopeId, reason } = input;
+    const { envelopeId, reason, sendEmail } = input;
 
     ctx.logger.info({
       input: {
@@ -30,6 +30,7 @@ export const cancelEnvelopeRoute = authenticatedProcedure
       userId: ctx.user.id,
       teamId,
       reason,
+      sendEmail,
       requestMetadata: ctx.metadata,
     });
 

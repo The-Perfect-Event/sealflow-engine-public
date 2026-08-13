@@ -18,10 +18,19 @@ export type CancelDocumentOptions = {
   userId: number;
   teamId: number;
   reason?: string;
+  /** Defaults to true; false suppresses recipient cancellation emails. */
+  sendEmail?: boolean;
   requestMetadata: ApiRequestMetadata;
 };
 
-export const cancelDocument = async ({ id, userId, teamId, reason, requestMetadata }: CancelDocumentOptions) => {
+export const cancelDocument = async ({
+  id,
+  userId,
+  teamId,
+  reason,
+  sendEmail = true,
+  requestMetadata,
+}: CancelDocumentOptions) => {
   // Note: This is an unsafe request, we validate the ownership/permission later in the function.
   const envelope = await prisma.envelope.findUnique({
     where: unsafeBuildEnvelopeIdQuery(id, EnvelopeType.DOCUMENT),
@@ -102,14 +111,19 @@ export const cancelDocument = async ({ id, userId, teamId, reason, requestMetada
   const legacyDocumentId = mapSecondaryIdToDocumentId(envelope.secondaryId);
 
   // Send cancellation emails to recipients via the resilient background job.
-  await jobs.triggerJob({
-    name: 'send.document.cancelled.emails',
-    payload: {
-      documentId: legacyDocumentId,
-      cancellationReason: reason,
-      requestMetadata: requestMetadata.requestMetadata,
-    },
-  });
+  // Skipped for housekeeping cancellations (sendEmail: false) — telling a
+  // recipient the agreement was "cancelled" would contradict the reason it was
+  // voided (e.g. a hard-signed copy was just uploaded).
+  if (sendEmail) {
+    await jobs.triggerJob({
+      name: 'send.document.cancelled.emails',
+      payload: {
+        documentId: legacyDocumentId,
+        cancellationReason: reason,
+        requestMetadata: requestMetadata.requestMetadata,
+      },
+    });
+  }
 
   // Trigger the webhook with the updated (cancelled) envelope payload.
   await triggerWebhook({
