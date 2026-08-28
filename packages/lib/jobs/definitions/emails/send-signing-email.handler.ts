@@ -251,23 +251,23 @@ export const run = async ({ payload, io }: { payload: TSendSigningEmailJobDefini
         }),
       ]);
 
-      // Attach the (unsigned) document PDF to the signing request, matching
+      // Attach the (unsigned) document PDF to the notification, matching
       // Adobe's behaviour so the recipient sees the contract in their inbox.
-      // CC recipients get no attachment here — they receive the fully signed
-      // PDF on completion.
-      const attachments = isCc
-        ? []
-        : await Promise.all(
-            envelope.envelopeItems.map(async (envelopeItem) => {
-              const file = await getFileServerSide(envelopeItem.documentData);
-              const fileName = envelope.internalVersion === 1 ? envelope.title : envelopeItem.title;
-              return {
-                filename: `${stripPdfExtension(fileName)}.pdf`,
-                content: Buffer.from(file),
-                contentType: 'application/pdf',
-              };
-            }),
-          );
+      // Signers AND CCs both get it: CCs (e.g. Event Directors) copy the
+      // itinerary out of the PDF into their calendar at send time — they can't
+      // wait for the fully-signed copy on completion (#278). Same document
+      // either way; only the subject/body differ by role.
+      const attachments = await Promise.all(
+        envelope.envelopeItems.map(async (envelopeItem) => {
+          const file = await getFileServerSide(envelopeItem.documentData);
+          const fileName = envelope.internalVersion === 1 ? envelope.title : envelopeItem.title;
+          return {
+            filename: `${stripPdfExtension(fileName)}.pdf`,
+            content: Buffer.from(file),
+            contentType: 'application/pdf',
+          };
+        }),
+      );
 
       await emailTransport.sendMail({
         to: {
