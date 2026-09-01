@@ -19,11 +19,16 @@ void (async () => {
   }
 })();
 
-const getImageDimensions = (img: HTMLImageElement, fieldWidth: number, fieldHeight: number) => {
+export const getImageDimensions = (img: HTMLImageElement, fieldWidth: number, fieldHeight: number) => {
   let imageWidth = img.width;
   let imageHeight = img.height;
 
-  const scalingFactor = Math.min(fieldWidth / imageWidth, fieldHeight / imageHeight, 1);
+  // Fit the image to the field, preserving aspect ratio — scaling UP as
+  // well as down. The previous `, 1` clamp capped the factor at 1x, so
+  // a signature image with smaller pixel dimensions than the field was
+  // drawn at its native (tiny) size and centered, never filling the box
+  // (#302, Dan uploaded a tightly-cropped image and it came out tiny).
+  const scalingFactor = Math.min(fieldWidth / imageWidth, fieldHeight / imageHeight);
 
   imageWidth = imageWidth * scalingFactor;
   imageHeight = imageHeight * scalingFactor;
