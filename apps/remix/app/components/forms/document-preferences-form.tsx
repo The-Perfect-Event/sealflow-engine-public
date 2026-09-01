@@ -39,7 +39,7 @@ import { msg, t } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import { Trans } from '@lingui/react/macro';
 import type { TeamGlobalSettings } from '@prisma/client';
-import { DocumentVisibility, OrganisationType, type RecipientRole } from '@prisma/client';
+import { DocumentVisibility, OrganisationType, RecipientRole } from '@prisma/client';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -583,9 +583,32 @@ export const DocumentPreferencesForm = ({
                                 value={recipient.role}
                                 onValueChange={(role: RecipientRole) => {
                                   field.onChange(
-                                    recipients.map((recipient, idx) =>
-                                      idx === index ? { ...recipient, role } : recipient,
-                                    ),
+                                    recipients.map((current, idx) => {
+                                      if (idx !== index) {
+                                        return current;
+                                      }
+
+                                      // Choosing Approver assigns the next approval
+                                      // position so this default recipient reviews
+                                      // before signers. An ordered approver forces
+                                      // documents to sequential (server-side in
+                                      // create-envelope). Leaving the role clears it.
+                                      if (role === RecipientRole.APPROVER) {
+                                        const existingApproverOrders = recipients
+                                          .filter((other, i) => i !== index && other.role === RecipientRole.APPROVER)
+                                          .map((other) => other.signingOrder ?? 0);
+
+                                        const nextOrder = existingApproverOrders.length
+                                          ? Math.max(...existingApproverOrders) + 1
+                                          : 1;
+
+                                        return { ...current, role, signingOrder: nextOrder };
+                                      }
+
+                                      const { signingOrder: _removed, ...rest } = current;
+
+                                      return { ...rest, role };
+                                    }),
                                   );
                                 }}
                               />
@@ -593,6 +616,15 @@ export const DocumentPreferencesForm = ({
                           </div>
                         );
                       })}
+                      {recipients.some((recipient) => recipient.role === RecipientRole.APPROVER) && (
+                        <Alert variant="neutral">
+                          <Trans>
+                            Approvers review and approve documents before they are sent to signers. With an approver
+                            set, sending becomes sequential automatically — the approver receives the document first,
+                            and signers are notified only once it is approved.
+                          </Trans>
+                        </Alert>
+                      )}
                     </div>
                   )}
 

@@ -16,6 +16,7 @@ import { createDocumentAuditLogData } from '@documenso/lib/utils/document-audit-
 import { prisma } from '@documenso/prisma';
 import type { DocumentMeta, DocumentVisibility, TemplateType } from '@prisma/client';
 import {
+  DocumentSigningOrder,
   DocumentSource,
   EnvelopeType,
   FolderType,
@@ -38,6 +39,7 @@ import type { TSignatureLevel } from '../../types/signature-level';
 import { mapEnvelopeToWebhookDocumentPayload, ZWebhookDocumentSchema } from '../../types/webhook-payload';
 import { getFileServerSide } from '../../universal/upload/get-file.server';
 import { putPdfFileServerSide } from '../../universal/upload/put-file.server';
+import { computeDefaultRecipientOrdering } from '../../utils/default-recipient-ordering';
 import { extractDerivedDocumentMeta } from '../../utils/document';
 import { createDocumentAuthOptions, createRecipientAuthOptions } from '../../utils/document-auth';
 import { buildTeamWhereQuery } from '../../utils/teams';
@@ -317,6 +319,23 @@ export const createEnvelope = async ({
   // for uploads from the frontend
   const timezoneToUse = meta?.timezone || settings.documentTimezone || userTimezone;
 
+  // Org-level default recipients (e.g. a pre-signature APPROVER). Parsed here so
+  // that if any carries an explicit signing order, the envelope is forced to
+  // SEQUENTIAL — otherwise the engine's turn-gating won't hold the signer until
+  // the approver has acted. No-op for orgs that configure no ordered default.
+  const configuredDefaultRecipients =
+    settings.defaultRecipients && !bypassDefaultRecipients
+      ? ZDefaultRecipientsSchema.parse(settings.defaultRecipients)
+      : [];
+
+  const defaultRecipientsForceSequential = configuredDefaultRecipients.some(
+    (recipient) => typeof recipient.signingOrder === 'number',
+  );
+
+  const metaToUse = defaultRecipientsForceSequential
+    ? { ...meta, signingOrder: DocumentSigningOrder.SEQUENTIAL }
+    : meta;
+
   const getValidatedDelegatedOwner = async () => {
     if (!settings.delegateDocumentOwnership || !delegatedDocumentOwner || requestMetadata.source === 'app') {
       return null;
@@ -352,7 +371,7 @@ export const createEnvelope = async ({
       data: extractDerivedDocumentMeta(
         settings,
         {
-          ...meta,
+          ...metaToUse,
           timezone: timezoneToUse,
         },
         signatureLevel,
@@ -417,18 +436,19 @@ export const createEnvelope = async ({
 
     const firstEnvelopeItem = envelope.envelopeItems[0];
 
-    const defaultRecipients =
-      settings.defaultRecipients && !bypassDefaultRecipients
-        ? ZDefaultRecipientsSchema.parse(settings.defaultRecipients)
-        : [];
-
-    const mappedDefaultRecipients: CreateEnvelopeRecipientOptions[] = defaultRecipients.map((recipient) => ({
+    const mappedDefaultRecipients: CreateEnvelopeRecipientOptions[] = configuredDefaultRecipients.map((recipient) => ({
       email: recipient.email,
       name: recipient.name,
       role: recipient.role,
+      signingOrder: recipient.signingOrder,
     }));
 
-    const allRecipients = [...(data.recipients || []), ...mappedDefaultRecipients];
+    // Place ordered default recipients (an approver) ahead of the sender's own
+    // recipients, shifting the sender's signing order to follow. A no-op unless
+    // a default recipient carries an explicit signing order.
+    const orderedRecipients = computeDefaultRecipientOrdering(data.recipients || [], mappedDefaultRecipients);
+
+    const allRecipients = [...orderedRecipients.senderRecipients, ...orderedRecipients.defaultRecipients];
 
     await Promise.all(
       allRecipients.map(async (recipient) => {

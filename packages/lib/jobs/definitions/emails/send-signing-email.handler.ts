@@ -25,6 +25,7 @@ import { stripPdfExtension } from '../../../universal/strip-pdf-extension';
 import { getFileServerSide } from '../../../universal/upload/get-file.server';
 import { createDocumentAuditLogData } from '../../../utils/document-audit-logs';
 import { unsafeBuildEnvelopeIdQuery } from '../../../utils/envelope';
+import { getRecipientRequestSubject } from '../../../utils/recipient-request-subject';
 import { renderCustomEmailTemplate } from '../../../utils/render-custom-email-template';
 import { renderEmailWithI18N } from '../../../utils/render-email-with-i18n';
 import type { JobRunIO } from '../../client/_internal/job';
@@ -146,11 +147,15 @@ export const run = async ({ payload, io }: { payload: TSendSigningEmailJobDefini
 
   const recipientActionVerb = i18n._(RECIPIENT_ROLES_DESCRIPTION[recipient.role].actionVerb).toLowerCase();
 
+  // An approver is asked to review/approve, not to sign — the request subject
+  // must reflect that. Signer wording is unchanged.
+  const requestSubject = getRecipientRequestSubject(i18n, recipient.role, envelope.title);
+
   // Adobe parity, recipient-facing: the signer sees "Signature requested on …".
   // ("<title> has been sent out for signature to <name>" is Adobe's SENDER-side
   // notification, not the signer's subject.)
   let emailMessage = customEmail?.message || '';
-  let emailSubject = i18n._(msg`Signature requested on "${envelope.title}"`);
+  let emailSubject = requestSubject;
 
   if (selfSigner) {
     emailMessage = i18n._(
@@ -167,7 +172,7 @@ export const run = async ({ payload, io }: { payload: TSendSigningEmailJobDefini
   }
 
   if (organisationType === OrganisationType.ORGANISATION) {
-    emailSubject = i18n._(msg`Signature requested on "${envelope.title}"`);
+    emailSubject = requestSubject;
     emailMessage = customEmail?.message ?? '';
 
     if (!emailMessage) {

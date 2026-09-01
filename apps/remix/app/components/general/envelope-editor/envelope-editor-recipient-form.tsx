@@ -155,6 +155,22 @@ export const EnvelopeEditorRecipientForm = () => {
     return watchedSigners.some((signer) => signer.role === RecipientRole.ASSISTANT);
   }, [watchedSigners]);
 
+  // An approver (e.g. an org-configured pre-signature approver) must review
+  // before signers, which only works sequentially — so signing order is forced
+  // on and the toggle is locked while an approver is present.
+  const hasApproverRole = useMemo(() => {
+    return watchedSigners.some((signer) => signer.role === RecipientRole.APPROVER);
+  }, [watchedSigners]);
+
+  useEffect(() => {
+    if (hasApproverRole && !isSigningOrderSequential) {
+      form.setValue('signingOrder', DocumentSigningOrder.SEQUENTIAL, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    }
+  }, [hasApproverRole, isSigningOrderSequential, form]);
+
   const normalizeSigningOrders = (signers: typeof watchedSigners) => {
     return signers
       .sort((a, b) => (a.signingOrder ?? 0) - (b.signingOrder ?? 0))
@@ -676,8 +692,14 @@ export const EnvelopeEditorRecipientForm = () => {
                       <Checkbox
                         {...field}
                         id="signingOrder"
-                        checked={field.value === DocumentSigningOrder.SEQUENTIAL}
+                        checked={field.value === DocumentSigningOrder.SEQUENTIAL || hasApproverRole}
                         onCheckedChange={(checked) => {
+                          // Locked on while an approver is present — approval
+                          // requires sequential routing.
+                          if (hasApproverRole) {
+                            return;
+                          }
+
                           if (!checked && hasAssistantRole) {
                             setShowSigningOrderConfirmation(true);
                             return;
@@ -693,7 +715,7 @@ export const EnvelopeEditorRecipientForm = () => {
                             });
                           }
                         }}
-                        disabled={isSubmitting || hasDocumentBeenSent}
+                        disabled={isSubmitting || hasDocumentBeenSent || hasApproverRole}
                       />
                     </FormControl>
 
@@ -713,10 +735,24 @@ export const EnvelopeEditorRecipientForm = () => {
                         </TooltipTrigger>
                         <TooltipContent className="max-w-80 p-4">
                           <p>
-                            <Trans>Add 2 or more signers to enable signing order.</Trans>
+                            {hasApproverRole ? (
+                              <Trans>
+                                Signing order is locked on because this document has an approver. The approver reviews
+                                first; signers are notified only once it is approved. Remove the approver to change the
+                                order.
+                              </Trans>
+                            ) : (
+                              <Trans>Add 2 or more signers to enable signing order.</Trans>
+                            )}
                           </p>
                         </TooltipContent>
                       </Tooltip>
+
+                      {hasApproverRole && (
+                        <span className="ml-2 text-muted-foreground text-xs">
+                          <Trans>Locked — required for approval</Trans>
+                        </span>
+                      )}
                     </div>
                   </FormItem>
                 )}
