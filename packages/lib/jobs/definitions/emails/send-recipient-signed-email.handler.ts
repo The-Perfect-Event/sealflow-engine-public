@@ -1,6 +1,5 @@
 import { DocumentRecipientSignedEmailTemplate } from '@documenso/email/templates/document-recipient-signed';
 import { prisma } from '@documenso/prisma';
-import { msg } from '@lingui/core/macro';
 import { EnvelopeType } from '@prisma/client';
 import { createElement } from 'react';
 
@@ -9,6 +8,7 @@ import { NEXT_PUBLIC_WEBAPP_URL } from '../../../constants/app';
 import { getEmailContext } from '../../../server-only/email/get-email-context';
 import { extractDerivedDocumentEmailSettings } from '../../../types/document-email';
 import { unsafeBuildEnvelopeIdQuery } from '../../../utils/envelope';
+import { getRecipientCompletedSubject } from '../../../utils/recipient-request-subject';
 import { isRecipientEmailValidForSending } from '../../../utils/recipients';
 import { renderEmailWithI18N } from '../../../utils/render-email-with-i18n';
 import type { JobRunIO } from '../../client/_internal/job';
@@ -91,6 +91,7 @@ export const run = async ({ payload, io }: { payload: TSendRecipientSignedEmailJ
     documentName: envelope.title,
     recipientName,
     recipientEmail,
+    recipientRole: recipient.role,
     assetBaseUrl,
   });
 
@@ -110,7 +111,7 @@ export const run = async ({ payload, io }: { payload: TSendRecipientSignedEmailJ
         address: owner.email,
       },
       from: senderEmail,
-      subject: i18n._(msg`${recipientReference} has signed "${envelope.title}"`),
+      subject: getRecipientCompletedSubject(i18n, recipient.role, recipientReference, envelope.title),
       html,
       text,
     });

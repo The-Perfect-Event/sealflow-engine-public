@@ -12,3 +12,17 @@ export const getRecipientRequestSubject = (i18n: I18n, role: RecipientRole, titl
   match(role)
     .with(RecipientRole.APPROVER, () => i18n._(msg`Approval requested on "${title}"`))
     .otherwise(() => i18n._(msg`Signature requested on "${title}"`));
+
+/**
+ * The localized subject for the owner notification when a recipient completes
+ * their action. An approver approves — the subject must not say they signed.
+ */
+export const getRecipientCompletedSubject = (
+  i18n: I18n,
+  role: RecipientRole,
+  recipientReference: string,
+  title: string,
+): string =>
+  match(role)
+    .with(RecipientRole.APPROVER, () => i18n._(msg`${recipientReference} has approved "${title}"`))
+    .otherwise(() => i18n._(msg`${recipientReference} has signed "${title}"`));

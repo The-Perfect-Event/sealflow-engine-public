@@ -1,4 +1,6 @@
 import { Trans } from '@lingui/react/macro';
+import { RecipientRole } from '@prisma/client';
+import { match } from 'ts-pattern';
 
 import { Column, Img, Section, Text } from '../components';
 import { TemplateDocumentImage } from './template-document-image';
@@ -7,6 +9,7 @@ export interface TemplateDocumentRecipientSignedProps {
   documentName: string;
   recipientName: string;
   recipientEmail: string;
+  recipientRole: RecipientRole;
   assetBaseUrl: string;
 }
 
@@ -14,6 +17,7 @@ export const TemplateDocumentRecipientSigned = ({
   documentName,
   recipientName,
   recipientEmail,
+  recipientRole,
   assetBaseUrl,
 }: TemplateDocumentRecipientSignedProps) => {
   const getAssetUrl = (path: string) => {
@@ -37,13 +41,25 @@ export const TemplateDocumentRecipientSigned = ({
         </Section>
 
         <Text className="mb-0 text-center font-semibold text-foreground text-lg">
-          <Trans>
-            {recipientReference} has signed "{documentName}"
-          </Trans>
+          {match(recipientRole)
+            .with(RecipientRole.APPROVER, () => (
+              <Trans>
+                {recipientReference} has approved "{documentName}"
+              </Trans>
+            ))
+            .otherwise(() => (
+              <Trans>
+                {recipientReference} has signed "{documentName}"
+              </Trans>
+            ))}
         </Text>
 
         <Text className="mx-auto mt-1 mb-6 max-w-[80%] text-center text-base text-muted-foreground">
-          <Trans>{recipientReference} has completed signing the document.</Trans>
+          {match(recipientRole)
+            .with(RecipientRole.APPROVER, () => <Trans>{recipientReference} has approved the document.</Trans>)
+            .otherwise(() => (
+              <Trans>{recipientReference} has completed signing the document.</Trans>
+            ))}
         </Text>
       </Section>
     </>
