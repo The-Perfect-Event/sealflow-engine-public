@@ -1,5 +1,6 @@
 import { unsafe_useEffectOnce } from '@documenso/lib/client-only/hooks/use-effect-once';
 import { SIGNATURE_CANVAS_DPI } from '@documenso/lib/constants/signatures';
+import { findInkBounds } from '@documenso/lib/universal/field-renderer/signature-ink-bounds';
 import { Trans } from '@lingui/react/macro';
 import { motion } from 'framer-motion';
 import { UploadCloudIcon } from 'lucide-react';
@@ -63,6 +64,42 @@ const loadImageOntoCanvas = (
   return imageData;
 };
 
+/**
+ * Export the canvas cropped to its ink bounding box. The pad canvas embeds
+ * the uploaded picture centered with transparent margins; storing the full
+ * canvas is what made uploaded signatures render tiny — the field-fit scaled
+ * the padding, not the ink (#302). Falls back to the raw canvas when there is
+ * nothing to trim.
+ */
+const canvasToTrimmedDataUrl = (canvas: HTMLCanvasElement): string => {
+  const ctx = canvas.getContext('2d');
+
+  if (!ctx) {
+    return canvas.toDataURL();
+  }
+
+  const bounds = findInkBounds(ctx.getImageData(0, 0, canvas.width, canvas.height));
+
+  if (!bounds) {
+    return canvas.toDataURL();
+  }
+
+  const trimmed = document.createElement('canvas');
+
+  trimmed.width = bounds.width;
+  trimmed.height = bounds.height;
+
+  const trimmedCtx = trimmed.getContext('2d');
+
+  if (!trimmedCtx) {
+    return canvas.toDataURL();
+  }
+
+  trimmedCtx.putImageData(ctx.getImageData(bounds.x, bounds.y, bounds.width, bounds.height), 0, 0);
+
+  return trimmed.toDataURL();
+};
+
 export type SignaturePadUploadProps = {
   className?: string;
   value: string;
@@ -88,7 +125,7 @@ export const SignaturePadUpload = ({ className, value, onChange, ...props }: Sig
       }
 
       $imageData.current = loadImageOntoCanvas(img, $el.current, ctx);
-      onChange?.($el.current.toDataURL());
+      onChange?.(canvasToTrimmedDataUrl($el.current));
     } catch (error) {
       console.error(error);
     }

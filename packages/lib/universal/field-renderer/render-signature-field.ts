@@ -8,18 +8,27 @@ import { calculateOverflowLayout } from './calculate-overflow-layout';
 import { createFieldHoverInteraction, upsertFieldGroup, upsertFieldRect } from './field-generic-items';
 import type { FieldToRender, RenderFieldElementOptions } from './field-renderer';
 import { calculateFieldPosition } from './field-renderer';
+import type { InkBounds } from './signature-ink-bounds';
+import { findInkBounds } from './signature-ink-bounds';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let SkiaImage: any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let SkiaCanvas: any;
 
 void (async () => {
   if (typeof window === 'undefined') {
     const mod = await import('skia-canvas');
     SkiaImage = mod.Image;
+    SkiaCanvas = mod.Canvas;
   }
 })();
 
-export const getImageDimensions = (img: HTMLImageElement, fieldWidth: number, fieldHeight: number) => {
+export const getImageDimensions = (
+  img: Pick<HTMLImageElement, 'width' | 'height'>,
+  fieldWidth: number,
+  fieldHeight: number,
+) => {
   let imageWidth = img.width;
   let imageHeight = img.height;
 
@@ -42,6 +51,56 @@ export const getImageDimensions = (img: HTMLImageElement, fieldWidth: number, fi
     x: imageX,
     y: imageY,
   };
+};
+
+/**
+ * Measure the ink bounding box of a loaded image by rasterising it and
+ * scanning the alpha channel. Returns null when the image can't be measured
+ * or cropping would be a no-op — callers then render the image uncropped,
+ * which is exactly the pre-trim behavior (fail open, never fail the render).
+ *
+ * Works in both environments: browser (offscreen canvas) and Node
+ * (skia-canvas). Stored signatures are canvas snapshots with the ink centered
+ * in transparent padding (the upload pad embeds uploads at 0.8x in the full
+ * pad canvas), so without this the "fit to field" scales the padding, not the
+ * ink (#302, Dan).
+ */
+export const measureInkBounds = (img: HTMLImageElement): InkBounds | null => {
+  try {
+    const width = img.width;
+    const height = img.height;
+
+    if (!width || !height) {
+      return null;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let canvas: any;
+
+    if (typeof window !== 'undefined') {
+      canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+    } else {
+      if (!SkiaCanvas) {
+        return null;
+      }
+
+      canvas = new SkiaCanvas(width, height);
+    }
+
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      return null;
+    }
+
+    ctx.drawImage(img, 0, 0);
+
+    return findInkBounds(ctx.getImageData(0, 0, width, height));
+  } catch {
+    return null;
+  }
 };
 
 type FieldSignature =
@@ -86,9 +145,16 @@ const createSignatureImage = (signatureImageAsBase64: string, fieldWidth: number
     });
 
     img.onload = () => {
+      // Crop to the ink bounding box before fitting: the stored base64 is a
+      // pad-canvas snapshot with the signature centered in transparent
+      // padding, so fitting the raw image fills the field with padding while
+      // the ink stays small (#302). Null bounds -> render uncropped as before.
+      const inkBounds = measureInkBounds(img);
+
       image.setAttrs({
         image: img,
-        ...getImageDimensions(img, fieldWidth, fieldHeight),
+        ...(inkBounds ? { crop: inkBounds } : {}),
+        ...getImageDimensions(inkBounds ?? img, fieldWidth, fieldHeight),
       });
 
       // Cache the image as a high-resolution bitmap so it stays sharp on
@@ -112,9 +178,14 @@ const createSignatureImage = (signatureImageAsBase64: string, fieldWidth: number
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   const img = new SkiaImage(signatureImageAsBase64) as unknown as HTMLImageElement;
 
+  // Same ink-bounds crop as the browser path — this is the PDF export path,
+  // so without it the signature burns into the final document tiny (#302).
+  const inkBounds = measureInkBounds(img);
+
   return new Konva.Image({
     image: img,
-    ...getImageDimensions(img, fieldWidth, fieldHeight),
+    ...(inkBounds ? { crop: inkBounds } : {}),
+    ...getImageDimensions(inkBounds ?? img, fieldWidth, fieldHeight),
     listening: false,
   });
 };
