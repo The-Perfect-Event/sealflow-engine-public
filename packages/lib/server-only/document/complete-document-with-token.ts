@@ -81,7 +81,13 @@ export const completeDocumentWithToken = async ({
   const legacyDocumentId = mapSecondaryIdToDocumentId(envelope.secondaryId);
 
   if (envelope.status !== DocumentStatus.PENDING) {
-    throw new Error(`Document ${envelope.id} must be pending`);
+    // Expected user behavior (e.g. a recipient acting on a just-cancelled
+    // document), not an application fault: an AppError with a 4xx code logs
+    // at info instead of tripping the app-errors alarm as a plain Error
+    // would via INTERNAL_SERVER_ERROR (#376).
+    throw new AppError(AppErrorCode.INVALID_REQUEST, {
+      message: `Document ${envelope.id} must be pending`,
+    });
   }
 
   if (envelope.recipients.length === 0) {

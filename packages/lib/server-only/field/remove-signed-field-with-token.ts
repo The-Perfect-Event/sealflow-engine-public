@@ -1,3 +1,4 @@
+import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import { DOCUMENT_AUDIT_LOG_TYPE } from '@documenso/lib/types/document-audit-logs';
 import type { RequestMetadata } from '@documenso/lib/universal/extract-request-metadata';
 import { createDocumentAuditLogData } from '@documenso/lib/utils/document-audit-logs';
@@ -54,7 +55,11 @@ export const removeSignedFieldWithToken = async ({
   }
 
   if (envelope.status !== DocumentStatus.PENDING) {
-    throw new Error(`Document ${envelope.id} must be pending`);
+    // Expected user behavior (undoing a field on a just-cancelled document) —
+    // log at info via AppError instead of tripping the app-errors alarm (#376).
+    throw new AppError(AppErrorCode.INVALID_REQUEST, {
+      message: `Document ${envelope.id} must be pending`,
+    });
   }
 
   assertRecipientNotExpired(recipient);
