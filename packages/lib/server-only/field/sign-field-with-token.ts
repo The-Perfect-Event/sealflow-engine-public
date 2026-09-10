@@ -3,6 +3,7 @@ import { validateDropdownField } from '@documenso/lib/advanced-fields-validation
 import { validateNumberField } from '@documenso/lib/advanced-fields-validation/validate-number';
 import { validateRadioField } from '@documenso/lib/advanced-fields-validation/validate-radio';
 import { validateTextField } from '@documenso/lib/advanced-fields-validation/validate-text';
+import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import { fromCheckboxValue } from '@documenso/lib/universal/field-checkbox';
 import { prisma } from '@documenso/prisma';
 import { DocumentStatus, FieldType, RecipientRole, SigningStatus } from '@prisma/client';
@@ -106,7 +107,11 @@ export const signFieldWithToken = async ({
   }
 
   if (envelope.status !== DocumentStatus.PENDING) {
-    throw new Error(`Document ${envelope.id} must be pending for signing`);
+    // Expected user behavior (signing on a just-cancelled document) — log at
+    // info via AppError instead of tripping the app-errors alarm (#376).
+    throw new AppError(AppErrorCode.INVALID_REQUEST, {
+      message: `Document ${envelope.id} must be pending for signing`,
+    });
   }
 
   assertRecipientNotExpired(recipient);

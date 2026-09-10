@@ -25,6 +25,7 @@ import { stripPdfExtension } from '../../../universal/strip-pdf-extension';
 import { getFileServerSide } from '../../../universal/upload/get-file.server';
 import { createDocumentAuditLogData } from '../../../utils/document-audit-logs';
 import { unsafeBuildEnvelopeIdQuery } from '../../../utils/envelope';
+import { appendEnvelopeSubjectReference } from '../../../utils/envelope-subject-reference';
 import { getRecipientRequestSubject } from '../../../utils/recipient-request-subject';
 import { renderCustomEmailTemplate } from '../../../utils/render-custom-email-template';
 import { renderEmailWithI18N } from '../../../utils/render-email-with-i18n';
@@ -283,9 +284,17 @@ export const run = async ({ payload, io }: { payload: TSendSigningEmailJobDefini
         replyTo: replyToEmail,
         // A custom subject is signer-facing ("please sign …") — never apply it
         // to a CC, whose subject must stay "You have been copied on …".
-        subject: isCc
-          ? emailSubject
-          : renderCustomEmailTemplate(documentMeta?.subject || emailSubject, customEmailTemplate),
+        //
+        // Every subject (default, custom, or CC) is stamped with the
+        // envelope's [ref MMDD-HHMM] code: a cancel-and-resend creates a new
+        // envelope with the same title, and without a distinguishing marker
+        // Gmail collapses its request email into the cancelled contract's
+        // thread (#376). Same envelope keeps the same code, so reminders and
+        // redistributes still thread with their own contract.
+        subject: appendEnvelopeSubjectReference(
+          isCc ? emailSubject : renderCustomEmailTemplate(documentMeta?.subject || emailSubject, customEmailTemplate),
+          envelope.createdAt,
+        ),
         html,
         text,
         attachments,
