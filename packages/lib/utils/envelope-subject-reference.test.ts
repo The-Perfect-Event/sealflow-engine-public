@@ -5,15 +5,15 @@ import { appendEnvelopeSubjectReference, getEnvelopeSubjectReference } from './e
 /**
  * #376 — cancel-and-resend creates a new envelope with the same title, and
  * identical subjects made Gmail collapse the new approval request into the
- * cancelled contract's thread. The [ref MMDD-HHMM] stamp (Pacific time, from
+ * cancelled contract's thread. The [MMDD-HHMM] stamp (Pacific time, from
  * the envelope's creation moment) makes every envelope's subject unique while
  * keeping reminders of the same envelope in their own thread.
  */
 
 describe('getEnvelopeSubjectReference', () => {
-  it('formats the creation moment as [ref MMDD-HHMM] in Pacific time', () => {
+  it('formats the creation moment as [MMDD-HHMM] in Pacific time', () => {
     // 2026-09-11 04:41 UTC == 2026-09-10 21:41 PDT
-    expect(getEnvelopeSubjectReference(new Date('2026-09-11T04:41:00Z'))).toBe('[ref 0910-2141]');
+    expect(getEnvelopeSubjectReference(new Date('2026-09-11T04:41:00Z'))).toBe('[0910-2141]');
   });
 
   it('is stable for the same envelope and distinct across envelopes', () => {
@@ -26,7 +26,7 @@ describe('getEnvelopeSubjectReference', () => {
 
   it('handles midnight without a "24" hour', () => {
     // 07:05 UTC == 00:05 PDT
-    expect(getEnvelopeSubjectReference(new Date('2026-09-10T07:05:00Z'))).toBe('[ref 0910-0005]');
+    expect(getEnvelopeSubjectReference(new Date('2026-09-10T07:05:00Z'))).toBe('[0910-0005]');
   });
 });
 
@@ -35,7 +35,7 @@ describe('appendEnvelopeSubjectReference', () => {
 
   it('appends to a default subject', () => {
     expect(appendEnvelopeSubjectReference('Approval requested on "RHO KKG SLO 09.17.2026"', createdAt)).toBe(
-      'Approval requested on "RHO KKG SLO 09.17.2026" [ref 0910-2141]',
+      'Approval requested on "RHO KKG SLO 09.17.2026" [0910-2141]',
     );
   });
 

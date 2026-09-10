@@ -286,7 +286,7 @@ export const run = async ({ payload, io }: { payload: TSendSigningEmailJobDefini
         // to a CC, whose subject must stay "You have been copied on …".
         //
         // Every subject (default, custom, or CC) is stamped with the
-        // envelope's [ref MMDD-HHMM] code: a cancel-and-resend creates a new
+        // envelope's [MMDD-HHMM] code: a cancel-and-resend creates a new
         // envelope with the same title, and without a distinguishing marker
         // Gmail collapses its request email into the cancelled contract's
         // thread (#376). Same envelope keeps the same code, so reminders and

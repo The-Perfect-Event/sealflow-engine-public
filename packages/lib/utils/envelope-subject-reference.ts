@@ -8,7 +8,7 @@
  * Approve button (#376, Tony, twice).
  *
  * The fix: stamp every request subject with a short code derived from the
- * envelope's creation moment, e.g. `[ref 0910-2141]` (MMDD-HHMM, Pacific —
+ * envelope's creation moment, e.g. `[0910-2141]` (MMDD-HHMM, Pacific —
  * the business timezone). Different envelopes get different codes, so their
  * emails can never merge; reminders and redistributes of the SAME envelope
  * keep the same code, so they still thread with their own contract.
@@ -31,7 +31,7 @@ export const getEnvelopeSubjectReference = (envelopeCreatedAt: Date): string => 
   // `hour12: false` can yield "24" for midnight in some ICU versions — normalise.
   const hour = get('hour') === '24' ? '00' : get('hour');
 
-  return `[ref ${get('month')}${get('day')}-${hour}${get('minute')}]`;
+  return `[${get('month')}${get('day')}-${hour}${get('minute')}]`;
 };
 
 /**
