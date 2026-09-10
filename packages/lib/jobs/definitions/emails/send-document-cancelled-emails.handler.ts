@@ -7,6 +7,7 @@ import { createElement } from 'react';
 
 import { getI18nInstance } from '../../../client-only/providers/i18n-server';
 import { NEXT_PUBLIC_WEBAPP_URL } from '../../../constants/app';
+import { buildEnvelopeEmailHeaders } from '../../../server-only/email/build-envelope-email-headers';
 import { getEmailContext } from '../../../server-only/email/get-email-context';
 import { assertOrganisationRatesAndLimits } from '../../../server-only/rate-limit/assert-organisation-rates-and-limits';
 import { extractDerivedDocumentEmailSettings } from '../../../types/document-email';
@@ -149,6 +150,11 @@ export const run = async ({ payload, io }: { payload: TSendDocumentCancelledEmai
             address: recipient.email,
           },
           from: senderEmail,
+          headers: buildEnvelopeEmailHeaders({
+            userId: envelope.userId,
+            envelopeId: envelope.id,
+            teamId: envelope.teamId,
+          }),
           replyTo: replyToEmail,
           subject: i18n._(msg`${envelope.title} Agreement Canceled`),
           html,

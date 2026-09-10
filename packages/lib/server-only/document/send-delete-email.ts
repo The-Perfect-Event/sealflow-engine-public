@@ -8,6 +8,7 @@ import { NEXT_PUBLIC_WEBAPP_URL } from '../../constants/app';
 import { AppError, AppErrorCode } from '../../errors/app-error';
 import { extractDerivedDocumentEmailSettings } from '../../types/document-email';
 import { renderEmailWithI18N } from '../../utils/render-email-with-i18n';
+import { buildEnvelopeEmailHeaders } from '../email/build-envelope-email-headers';
 import { getEmailContext } from '../email/get-email-context';
 
 export interface SendDeleteEmailOptions {
@@ -81,6 +82,7 @@ export const sendDeleteEmail = async ({ envelopeId, reason }: SendDeleteEmailOpt
       name: name || '',
     },
     from: senderEmail,
+    headers: buildEnvelopeEmailHeaders({ userId: envelope.userId, envelopeId: envelope.id, teamId: envelope.teamId }),
     subject: i18n._(msg`Document Deleted!`),
     html,
     text,
