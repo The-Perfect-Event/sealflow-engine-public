@@ -561,6 +561,7 @@ const mapLocalRecipientsToRecipients = ({
       documentDeletedAt: foundRecipient?.documentDeletedAt || null,
       expired: foundRecipient?.expired || null,
       signedAt: foundRecipient?.signedAt || null,
+      bouncedAt: foundRecipient?.bouncedAt || null,
       authOptions: recipient.actionAuth.length > 0 ? { actionAuth: recipient.actionAuth, accessAuth: [] } : null,
       signingOrder: recipient.signingOrder ?? null,
       rejectionReason: foundRecipient?.rejectionReason || null,

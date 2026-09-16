@@ -13,6 +13,7 @@ import { ZRecipientAccessAuthTypesSchema, ZRecipientActionAuthTypesSchema } from
 export const ZDocumentAuditLogTypeSchema = z.enum([
   // Document actions.
   'EMAIL_SENT',
+  'EMAIL_BOUNCED', // When the mail provider reports a permanent delivery failure for a recipient email.
 
   // Document modification events.
   'FIELD_CREATED',
@@ -248,6 +249,19 @@ export const ZDocumentAuditLogEventEmailSentSchema = z.object({
   data: ZBaseRecipientDataSchema.extend({
     emailType: ZDocumentAuditLogEmailTypeSchema,
     isResending: z.boolean(),
+  }),
+});
+
+/**
+ * Event: Email bounced. Written when the mail provider (SES) reports a
+ * permanent delivery failure for an email sent to a recipient.
+ */
+export const ZDocumentAuditLogEventEmailBouncedSchema = z.object({
+  type: z.literal(DOCUMENT_AUDIT_LOG_TYPE.EMAIL_BOUNCED),
+  data: ZBaseRecipientDataSchema.extend({
+    bounceType: z.string(),
+    bounceSubType: z.string().optional(),
+    diagnosticCode: z.string().optional(),
   }),
 });
 
@@ -835,6 +849,7 @@ export const ZDocumentAuditLogSchema = ZDocumentAuditLogBaseSchema.and(
     ZDocumentAuditLogEventEnvelopeItemUpdatedSchema,
     ZDocumentAuditLogEventEnvelopeItemPdfReplacedSchema,
     ZDocumentAuditLogEventEmailSentSchema,
+    ZDocumentAuditLogEventEmailBouncedSchema,
     ZDocumentAuditLogEventDocumentCompletedSchema,
     ZDocumentAuditLogEventDocumentCreatedSchema,
     ZDocumentAuditLogEventDocumentDeletedSchema,

@@ -310,6 +310,7 @@ const EnvelopeCreatePage = ({ embedAuthoringOptions }: EnvelopeCreatePageProps) 
       signingStatus: SigningStatus.NOT_SIGNED,
       sendStatus: SendStatus.NOT_SENT,
       documentDeletedAt: null,
+      bouncedAt: null,
       expired: null,
       signedAt: null,
       authOptions: {

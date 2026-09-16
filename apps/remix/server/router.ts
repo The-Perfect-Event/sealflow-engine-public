@@ -27,6 +27,7 @@ import type { Logger } from 'pino';
 import { aiRoute } from './api/ai/route';
 import { downloadRoute } from './api/download/download';
 import { filesRoute } from './api/files/files';
+import { sesWebhookRoute } from './api/webhooks/ses';
 import { type AppContext, appContext } from './context';
 import { appMiddleware } from './middleware';
 import { securityHeadersMiddleware } from './security-headers';
@@ -102,6 +103,10 @@ app.use('/api/v2-beta/*', apiV2RateLimitMiddleware);
 
 // Auth server.
 app.route('/api/auth', auth);
+
+// Inbound SNS webhook for SES email events (bounces). Auth = SNS signature
+// verification inside the route, not a session.
+app.route('/api/webhook/ses', sesWebhookRoute);
 
 // Files route.
 app.use('/api/files/upload-pdf', fileRateLimitMiddleware);
