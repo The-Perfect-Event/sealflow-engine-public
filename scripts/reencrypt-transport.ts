@@ -10,10 +10,14 @@
  * the caller decides that; this script only ever handles the JSON payload
  * it's given, on stdin, never as a CLI arg or env var it reads itself.
  *
- * Same reasoning as #308: no decrypt of the existing stored config — the
- * app's own admin.emailTransport.update mutation can't do this once the
- * key's rotated out from under it (decrypt-then-merge fails with
- * "invalid tag", documented on #308). This replaces the config outright.
+ * The admin UI can NEVER fix an orphaned transport on its own: its
+ * `admin.emailTransport.update` mutation decrypts the existing stored
+ * config first, to merge in whatever the edit form left blank — so it
+ * fails on the very step that's broken, throwing "invalid tag" before it
+ * ever gets to writing anything (documented on #308). There is no config
+ * you can type into that form that gets around this. The direct DB write
+ * below is the only path: it replaces the config outright, never
+ * decrypting the old (dead) one at all.
  *
  * Standalone by design (same reasons as the other #308/#362 scripts): the
  * production image doesn't ship @documenso/lib's constants/ or
