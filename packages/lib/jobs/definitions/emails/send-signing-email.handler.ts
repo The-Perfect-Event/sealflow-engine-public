@@ -308,6 +308,9 @@ export const run = async ({ payload, io }: { payload: TSendSigningEmailJobDefini
       data: {
         sendStatus: SendStatus.SENT,
         sentAt,
+        // A fresh send supersedes any recorded delivery failure — if this one
+        // bounces too, the SES webhook re-marks it (#390).
+        bouncedAt: null,
       },
     });
   });

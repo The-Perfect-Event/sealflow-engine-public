@@ -152,6 +152,29 @@ export const DocumentPageViewRecipients = ({ envelope, documentRootPath }: Docum
               {envelope.status !== DocumentStatus.DRAFT &&
                 recipient.signingStatus === SigningStatus.NOT_SIGNED &&
                 !isRecipientExpired(recipient) &&
+                recipient.bouncedAt && (
+                  <PopoverHover
+                    trigger={
+                      <Badge variant="destructive">
+                        <AlertTriangle className="mr-1 h-3 w-3" />
+                        <Trans>Delivery failed</Trans>
+                      </Badge>
+                    }
+                  >
+                    <p className="text-muted-foreground text-xs">
+                      <Trans>
+                        The email to {recipient.email} was returned as undeliverable on{' '}
+                        {i18n.date(recipient.bouncedAt, DateTime.DATETIME_MED)}. Check the address, correct it if
+                        needed, and resend to this recipient.
+                      </Trans>
+                    </p>
+                  </PopoverHover>
+                )}
+
+              {envelope.status !== DocumentStatus.DRAFT &&
+                recipient.signingStatus === SigningStatus.NOT_SIGNED &&
+                !isRecipientExpired(recipient) &&
+                !recipient.bouncedAt &&
                 (recipient.expiresAt ? (
                   <PopoverHover
                     trigger={

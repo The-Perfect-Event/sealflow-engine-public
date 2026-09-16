@@ -645,6 +645,9 @@ model Recipient {
   expirationNotifiedAt DateTime?
   sentAt               DateTime?
   signedAt             DateTime?
+  /// Set when SES reports a permanent delivery failure for this recipient's
+  /// email; cleared automatically when a later send to them succeeds.
+  bouncedAt            DateTime?
   lastReminderSentAt   DateTime?
   nextReminderAt       DateTime?
   reminderCount        Int           @default(0)

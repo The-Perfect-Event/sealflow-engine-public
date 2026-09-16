@@ -569,6 +569,14 @@ export const formatDocumentAuditLogAction = (i18n: I18n, auditLog: TDocumentAudi
         user: msg`${user} sent an email to ${data.recipientEmail}`,
       };
     })
+    .with({ type: DOCUMENT_AUDIT_LOG_TYPE.EMAIL_BOUNCED }, ({ data }) => ({
+      anonymous: msg({
+        message: `Email to ${data.recipientEmail} could not be delivered`,
+        context: `Audit log format`,
+      }),
+      you: msg`Email to ${data.recipientEmail} could not be delivered`,
+      user: msg`Email to ${data.recipientEmail} could not be delivered`,
+    }))
     .with({ type: DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_COMPLETED }, () => ({
       anonymous: msg({ message: `Document completed`, context: `Audit log format` }),
       you: msg({ message: `Document completed`, context: `Audit log format` }),
