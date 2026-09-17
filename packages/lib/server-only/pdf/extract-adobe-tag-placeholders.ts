@@ -51,12 +51,20 @@ export const extractAdobeTagPlaceholders = async (
     // placeholder so signers see e.g. a "Phone" field, not a bare text box.
     const textSubtypeLabel = field.type === 'TEXT' && field.subtype ? TEXT_SUBTYPE_LABEL[field.subtype] : undefined;
 
+    // A `Txt…:email` tag stays a typeable TEXT field but carries the Text
+    // field's `email` validation rule, so the signer can enter somebody
+    // else's address (the payer is usually not the signer) and still cannot
+    // submit a value that is not an address. `Em` remains the locked,
+    // auto-filled EMAIL field type; this is the editable counterpart.
+    const textValidationRule = field.type === 'TEXT' && field.subtype === 'email' ? 'email' : undefined;
+
     const fieldAndMeta: TFieldAndMeta = ZEnvelopeFieldAndMetaSchema.parse({
       type: field.type,
       fieldMeta: {
         type: fieldMetaTypeFor(field),
         required: field.required,
         ...(textSubtypeLabel ? { label: textSubtypeLabel, placeholder: textSubtypeLabel } : {}),
+        ...(textValidationRule ? { validationRule: textValidationRule } : {}),
       },
     });
 
@@ -140,6 +148,7 @@ const TEXT_SUBTYPE_LABEL: Record<string, string> = {
   company: 'Company',
   address: 'Address',
   url: 'URL',
+  email: 'Email',
 };
 
 const fieldMetaTypeFor = (field: ParsedField): string => {

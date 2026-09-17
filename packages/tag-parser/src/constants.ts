@@ -1,4 +1,4 @@
-import type { FieldType, FieldSubtype, FieldDimensions } from './types.js';
+import type { FieldDimensions, FieldSubtype, FieldType } from './types.js';
 
 /**
  * Adobe prefix -> Documenso type + optional subtype hint.
@@ -25,13 +25,22 @@ export const PREFIX_MAP: Record<string, { type: FieldType; subtype?: FieldSubtyp
   Hyp: { type: 'TEXT', subtype: 'url' },
 };
 
-/** Recognised explicit `:SUBTYPE` tokens. */
+/**
+ * Recognised explicit `:SUBTYPE` tokens.
+ *
+ * `email` is deliberately a subtype of TEXT rather than a prefix of its own:
+ * the `Em` prefix already means the EMAIL field type, which the engine
+ * pre-fills with the signer's own address at send time and locks. A tag that
+ * needs a *typeable* address the signer fills in for someone else is
+ * `Txt…:email` — free text, validated as an address on submit.
+ */
 export const KNOWN_SUBTYPES: ReadonlySet<FieldSubtype> = new Set<FieldSubtype>([
   'phone',
   'title',
   'company',
   'address',
   'url',
+  'email',
   'signature',
   'initials',
 ]);

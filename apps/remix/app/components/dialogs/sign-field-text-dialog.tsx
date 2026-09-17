@@ -35,6 +35,13 @@ export const SignFieldTextDialog = createCallable<SignFieldTextDialogProps, stri
 
   // Enforce the field's optional format rule (email/date) on the signer's input;
   // a plain Text field (no rule) just requires a non-empty value.
+  //
+  // The rule messages are resolved to text here rather than passed as message
+  // IDs. FormMessage renders a Zod error by looking the string up with
+  // `i18n.t()`, and an ID with no catalog entry resolves to ITSELF — so a
+  // string that has not been through `npm run translate` reaches the signer as
+  // its generated hash (e.g. "OtjenF"). Resolving with `t` falls back to the
+  // English text instead of a hash when the catalog is behind.
   const formSchema = useMemo(
     () =>
       z.object({
@@ -44,11 +51,11 @@ export const SignFieldTextDialog = createCallable<SignFieldTextDialogProps, stri
           .refine((value) => isTextFieldValueValid(value, validationRule), {
             message:
               validationRule === 'email'
-                ? msg`Please enter a valid email address`.id
-                : msg`Please enter a valid date (MM/DD/YYYY)`.id,
+                ? t`Please enter a valid email address`
+                : t`Please enter a valid date (MM/DD/YYYY)`,
           }),
       }),
-    [validationRule],
+    [validationRule, t],
   );
 
   const form = useForm<TSignFieldTextFormSchema>({

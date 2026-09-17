@@ -5,7 +5,7 @@
 
 export type FieldType = 'SIGNATURE' | 'INITIALS' | 'DATE' | 'EMAIL' | 'NAME' | 'CHECKBOX' | 'TEXT';
 
-export type FieldSubtype = 'phone' | 'title' | 'company' | 'address' | 'url' | 'signature' | 'initials';
+export type FieldSubtype = 'phone' | 'title' | 'company' | 'address' | 'url' | 'email' | 'signature' | 'initials';
 
 export interface FieldDimensions {
   widthMm: number;

@@ -9,6 +9,34 @@ versioning is our own `v1.x.y` line (not upstream Documenso's).
 
 Deploy procedure: [`sealflow/docs/operations-runbook.md`](https://github.com/The-Perfect-Event/sealflow) → "Deploy a sealflow-engine version bump".
 
+> **Note:** entries for v1.3.0 … v1.3.14 were never written up. The deploy history
+> for those releases lives in `sealflow/docs/production-deployment.md` and the
+> project-management tickets. Backfilling them is tracked separately.
+
+## [v1.3.15] — 2026-09-17
+
+project-management#267 — a client could not edit the financial contact (payer)
+email on a contract; it arrived pre-filled with the signer's own address and
+locked. The payer is usually not the signer (the Social Chair plans the event,
+the Treasurer writes the checks), and it was the signer's address on 87 of 87
+SealFlow contracts.
+
+### Added
+- **`:email` text subtype for Adobe tags.** `{{*Txt2_es_:signer2:email}}` creates a
+  *typeable* TEXT field carrying the Text field's `email` validation rule, so a
+  signer can enter somebody else's address and still cannot submit a non-address.
+  The `Em` prefix keeps its existing meaning (the EMAIL field type, auto-filled with
+  the recipient's own address at send time and locked); this is the editable
+  counterpart. Labelled "Email" on the signing page, like `:phone` → "Phone".
+
+### Fixed
+- **Validated Text fields showed a message ID instead of an error.** An invalid
+  value in a validated Text field rendered its Lingui message ID (e.g. `OtjenF`)
+  rather than "Please enter a valid email address". `FormMessage` resolves a Zod
+  error with `i18n.t()`, which returns an ID unchanged when the catalog has no
+  entry, and the two strings added in v1.2.5 were never extracted. They are now
+  resolved with the `t` macro, which falls back to the English text.
+
 ## [v1.2.6] — 2026-08-06
 
 project-management#7 — monitoring/alerting groundwork ahead of the Adobe→SealFlow cutover.
